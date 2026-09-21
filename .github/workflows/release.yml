@@ -37,6 +37,29 @@ jobs:
           bundle=$(basename $(ls dist/nimbly-docs.*.min.js | head -1))
           echo "bundle=$bundle" >> "$GITHUB_OUTPUT"
           echo "sri=$(cat dist/*.sha384)" >> "$GITHUB_OUTPUT"
+      # Publish the built bundle onto a dedicated `cdn` branch so it lives in the
+      # git tree that jsDelivr's /gh/ endpoint can actually serve. dist/ is
+      # gitignored on main, so the tag tree does not contain it — this branch does.
+      - name: Publish bundle to cdn branch
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          tmp="$(mktemp -d)"
+          cp dist/nimbly-docs.*.min.js "$tmp/"
+          cp dist/nimbly-docs.*.min.js.map "$tmp/" || true
+          cp dist/nimbly-docs.*.min.js.sha384 "$tmp/" || true
+          # Stable, unhashed aliases for convenience.
+          cp dist/nimbly-docs.min.js "$tmp/nimbly-docs.${version}.min.js"
+          cp dist/nimbly-docs.min.js "$tmp/nimbly-docs.latest.min.js"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin cdn && git checkout cdn || git checkout --orphan cdn
+          git rm -rfq . 2>/dev/null || true
+          mkdir -p cdn
+          cp "$tmp"/* cdn/
+          echo "Nimbly Docs CDN branch — files are served via jsDelivr /gh/." > README.md
+          git add -A
+          git commit -m "cdn: ${GITHUB_REF_NAME}" || echo "no changes"
+          git push origin cdn
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -50,13 +73,21 @@ jobs:
             **Bundle:** `${{ steps.artifacts.outputs.bundle }}`
             **SRI:** `${{ steps.artifacts.outputs.sri }}`
 
-            ### Use it (jsDelivr, served from this release tag)
+            ### Use it via jsDelivr (served from the `cdn` branch)
 
             ```html
             <script type="module"
-              src="https://cdn.jsdelivr.net/gh/${{ github.repository }}@${{ github.ref_name }}/dist/${{ steps.artifacts.outputs.bundle }}"
+              src="https://cdn.jsdelivr.net/gh/${{ github.repository }}@cdn/cdn/${{ steps.artifacts.outputs.bundle }}"
               crossorigin="anonymous"></script>
             ```
 
-            Or download the attached bundle and host it yourself with
+            ### Or via GitHub Pages (versioned)
+
+            ```html
+            <script type="module"
+              src="https://${{ github.repository_owner }}.github.io/nimbly-docs/cdn/nimbly-docs.<version>.min.js"
+              crossorigin="anonymous"></script>
+            ```
+
+            You can also download the attached bundle and host it yourself with
             `Cache-Control: public, max-age=31536000, immutable`.

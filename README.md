@@ -413,15 +413,17 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-The release body includes a ready-to-use, immutable jsDelivr URL served from the tag:
+The workflow also publishes the built bundle to a dedicated `cdn` branch (because `dist/` is gitignored and therefore not present in the tag's git tree). jsDelivr serves that branch directly:
 
 ```html
 <script type="module"
-  src="https://cdn.jsdelivr.net/gh/OWNER/nimbly-docs@v0.0.1/dist/nimbly-docs.0.0.1.<hash>.min.js"
+  src="https://cdn.jsdelivr.net/gh/OWNER/nimbly-docs@cdn/cdn/nimbly-docs.0.0.1.<hash>.min.js"
   crossorigin="anonymous"></script>
 ```
 
-Both approaches are free, cacheable and versioned. For the strongest guarantees use the tagged jsDelivr URL with Subresource Integrity (the `.sha384` value is attached to the release).
+> Note: `https://cdn.jsdelivr.net/gh/OWNER/nimbly-docs@vX.Y.Z/dist/…` does **not** work, because `dist/` is not committed on `main`. Use the `@cdn/cdn/…` path above, the GitHub Pages `/cdn/` path, or the bundle attached to the GitHub Release.
+
+Both approaches are free, cacheable and versioned. For the strongest guarantees use Subresource Integrity (the `.sha384` value is attached to the release).
 
 ## Is `manifest.schema.json` required?
 
