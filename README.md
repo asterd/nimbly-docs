@@ -73,7 +73,7 @@ Net result: practical parity on daily-use features, plus a stronger security, ac
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script type="module" src="/assets/nimbly-docs.1.0.0.abc123.min.js"></script>
+    <script type="module" src="/assets/nimbly-docs.0.0.1.<hash>.min.js"></script>
   </head>
   <body>
     <nimbly-docs manifest="./index.json"></nimbly-docs>
