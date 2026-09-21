@@ -54,6 +54,8 @@ export class NimblyDocsElement extends HTMLElement {
   private navigating = 0;
   private locale = "";
   private strings: UIStrings = stringsFor("en");
+  private rawManifest: unknown = null;
+  private manifestUrl = "";
 
   connectedCallback(): void {
     this.syncPageMode();
@@ -125,6 +127,12 @@ export class NimblyDocsElement extends HTMLElement {
     persistLocale(next);
     this.strings = stringsFor(next);
     document.documentElement.setAttribute("lang", next);
+    // Re-normalize so section/page titles resolve to the new locale.
+    try {
+      this.manifest = normalizeManifest(this.rawManifest, this.manifestUrl, next);
+    } catch {
+      /* keep the previous manifest if re-normalization somehow fails */
+    }
     // Rebuild the shell so all localized labels update, then re-render the route.
     this.mountShell(this.options());
     this.router.start((route) => void this.onRoute(route));
@@ -195,9 +203,16 @@ export class NimblyDocsElement extends HTMLElement {
     this.renderLoading();
     try {
       const raw = await this.loader.fetchManifest(manifestUrl);
+      this.rawManifest = raw;
+      this.manifestUrl = manifestUrl;
+      // First pass with no locale to discover declared languages.
       this.manifest = normalizeManifest(raw, manifestUrl);
       this.initialized = true;
       this.locale = this.resolveLocale(opts);
+      // Re-resolve titles for the active locale when the docs are multilingual.
+      if (this.manifest.languages.length > 0) {
+        this.manifest = normalizeManifest(raw, manifestUrl, this.locale);
+      }
       this.strings = stringsFor(this.locale);
       if (this.manifest.languages.length > 0) document.documentElement.setAttribute("lang", this.locale);
       this.mountShell(opts);

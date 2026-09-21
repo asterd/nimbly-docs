@@ -103,12 +103,12 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--dv-color-focus)
 .nd-links { display: flex; align-items: center; gap: .1rem; }
 .nd-links[hidden] { display: none; }
 .nd-link { text-decoration: none; }
-.nd-links + .nd-lang, .nd-links + .nd-lang + .nd-appearance-button, .nd-lang:not([hidden]) { margin-left: .1rem; }
-.nd-actions > .nd-appearance-button { margin-left: .25rem; padding-left: .1rem; border-left: 1px solid var(--dv-color-border); border-radius: .55rem; }
-.nd-lang { position: relative; }
+.nd-lang { position: relative; display: flex; align-items: center; }
 .nd-lang[hidden] { display: none; }
-.nd-lang-button { width: auto; min-width: 2.25rem; gap: .2rem; padding: 0 .45rem; }
-.nd-lang-code { font-size: .72rem; font-weight: 700; letter-spacing: .02em; }
+/* Homogeneous with the icon buttons: same 2.25rem height, single inline row. */
+.nd-lang-button { display: inline-flex; align-items: center; width: auto; min-width: 2.25rem; height: 2.25rem; gap: .3rem; padding: 0 .5rem; }
+.nd-lang-button svg { width: 1.1rem; height: 1.1rem; }
+.nd-lang-code { font-size: .72rem; font-weight: 700; letter-spacing: .03em; line-height: 1; }
 .nd-lang-menu { position: absolute; top: calc(100% + .35rem); right: 0; z-index: 30; min-width: 9rem; padding: .3rem; border: 1px solid var(--dv-color-border); border-radius: .6rem; background: var(--dv-color-surface-raised); box-shadow: var(--dv-shadow); }
 .nd-lang-option { display: block; width: 100%; padding: .45rem .55rem; border: 0; border-radius: .4rem; background: transparent; color: var(--dv-color-text); cursor: pointer; font-size: .85rem; text-align: left; }
 .nd-lang-option:hover { background: var(--dv-color-bg); }

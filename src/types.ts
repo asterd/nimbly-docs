@@ -20,10 +20,13 @@ export interface ManifestFeatures {
   };
 }
 
+/** A string that may be localized as a `{ locale: value }` map. */
+export type LocalizableString = string | Record<string, string>;
+
 /** A single documentation page entry in the manifest. */
 export interface ManifestPage {
   id: string;
-  title: string;
+  title: LocalizableString;
   /** URL to the Markdown source, resolved relative to the manifest URL. */
   source: string;
   /**
@@ -66,7 +69,7 @@ export interface ManifestLanguage {
 /** A navigable group of pages. Sections may nest one level of subsections. */
 export interface ManifestSection {
   id: string;
-  title: string;
+  title: LocalizableString;
   /** Optional icon key (a small built-in glyph set). */
   icon?: string;
   pages?: ManifestPage[];
@@ -123,7 +126,9 @@ export interface Manifest {
 }
 
 /** A page flattened into a lookup table with its resolved absolute source URL. */
-export interface ResolvedPage extends ManifestPage {
+export interface ResolvedPage extends Omit<ManifestPage, "title"> {
+  /** Title resolved to the active locale. */
+  title: string;
   /** Absolute URL of the default Markdown source. */
   url: string;
   /** Absolute per-locale Markdown URLs (locale code → URL). */

@@ -42,7 +42,7 @@
   "sections": [
     {
       "id": "getting-started",
-      "title": "Getting started",
+      "title": { "en": "Getting started", "it": "Per iniziare" },
       "pages": [
         { "id": "welcome", "title": "Welcome", "source": "./pages/welcome.md", "sources": { "en": "./pages/welcome.md", "it": "./pages/it/welcome.md" }, "description": "What Nimbly Docs is and why it exists.", "badge": "new" },
         { "id": "installation", "title": "Installation", "source": "./pages/installation.md" },
@@ -51,11 +51,11 @@
     },
     {
       "id": "guides",
-      "title": "Guides",
+      "title": { "en": "Guides", "it": "Guide" },
       "sections": [
         {
           "id": "guides-content",
-          "title": "Content",
+          "title": { "en": "Content", "it": "Contenuti" },
           "pages": [
             { "id": "markdown", "title": "Markdown features", "source": "./pages/markdown.md" },
             { "id": "security", "title": "Security model", "source": "./pages/security.md" }
@@ -63,7 +63,7 @@
         },
         {
           "id": "guides-customization",
-          "title": "Customization",
+          "title": { "en": "Customization", "it": "Personalizzazione" },
           "pages": [
             { "id": "themes", "title": "Themes", "source": "./pages/themes.md" },
             { "id": "diagrams", "title": "Diagrams (Mermaid)", "source": "./pages/diagrams.md", "badge": "opt-in" }
@@ -73,7 +73,7 @@
     },
     {
       "id": "reference",
-      "title": "Reference",
+      "title": { "en": "Reference", "it": "Riferimento" },
       "pages": [
         { "id": "api", "title": "Component API", "source": "./pages/api.md" },
         { "id": "technical", "title": "Technical details", "source": "./pages/technical.md" }

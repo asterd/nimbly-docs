@@ -38,7 +38,7 @@ export class Sidebar {
     btn.className = "nd-section-toggle";
     btn.setAttribute("aria-expanded", String(expanded));
     btn.setAttribute("aria-controls", `nd-section-${cssSafe(section.id)}`);
-    btn.innerHTML = `${chevronIcon()}<span>${escapeHtml(section.title)}</span>`;
+    btn.innerHTML = `${chevronIcon()}<span>${escapeHtml(str(section.title))}</span>`;
     btn.addEventListener("click", () => {
       if (this.expanded.has(section.id)) this.expanded.delete(section.id); else this.expanded.add(section.id);
       this.saveState();
@@ -51,11 +51,11 @@ export class Sidebar {
     list.id = `nd-section-${cssSafe(section.id)}`;
     list.hidden = !expanded;
     for (const page of section.pages || []) {
-      if (!page.hidden) list.appendChild(this.renderPage(page.id, page.title, page.badge, activePageId));
+      if (!page.hidden) list.appendChild(this.renderPage(page.id, str(page.title), page.badge, activePageId));
     }
     for (const sub of section.sections || []) {
       for (const page of sub.pages || []) {
-        if (!page.hidden) list.appendChild(this.renderPage(page.id, `${sub.title}: ${page.title}`, page.badge, activePageId));
+        if (!page.hidden) list.appendChild(this.renderPage(page.id, `${str(sub.title)}: ${str(page.title)}`, page.badge, activePageId));
       }
     }
     group.appendChild(list);
@@ -98,6 +98,10 @@ export class Sidebar {
   private saveState(): void {
     try { sessionStorage.setItem(this.storageKey, JSON.stringify([...this.expanded])); } catch { /* ignored */ }
   }
+}
+/** Resolved manifests carry plain-string titles; coerce for the type checker. */
+function str(value: string | Record<string, string>): string {
+  return typeof value === "string" ? value : Object.values(value)[0] ?? "";
 }
 function cssSafe(id: string): string { return id.replace(/[^a-z0-9_-]/gi, "-"); }
 function escapeHtml(v: string): string { return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }

@@ -38,6 +38,35 @@ function requireString(v: unknown, field: string): string {
   return v;
 }
 
+/**
+ * Resolve a localizable title (a string, or a `{ locale: value }` map) to the
+ * active locale, falling back to the default locale, then to any first value.
+ */
+function resolveTitle(
+  value: unknown,
+  field: string,
+  locale: string,
+  defaultLocale: string
+): string {
+  if (typeof value === "string" && value.length > 0) return value;
+  if (isPlainObject(value)) {
+    const map = value as Record<string, unknown>;
+    const pick = (code: string): string | undefined => {
+      const v = map[code];
+      return typeof v === "string" && v.length > 0 ? v : undefined;
+    };
+    const base = locale.split("-")[0]!;
+    const chosen =
+      pick(locale) ??
+      pick(base) ??
+      pick(defaultLocale) ??
+      pick(defaultLocale.split("-")[0]!) ??
+      Object.values(map).find((v): v is string => typeof v === "string" && v.length > 0);
+    if (chosen) return chosen;
+  }
+  throw new ManifestError(`"${field}" must be a non-empty string or locale map`);
+}
+
 /** The major number declared in `version` (e.g. "1.2" -> 1). */
 function majorOf(version: string): number {
   const m = /^(\d+)/.exec(version);
@@ -72,13 +101,19 @@ function resolveSource(source: string, manifestUrl: string): string {
   return resolved.href;
 }
 
+interface LocaleCtx {
+  locale: string;
+  defaultLocale: string;
+}
+
 function validatePage(
   page: unknown,
   manifestUrl: string,
   seenIds: Set<string>,
   sectionPath: string[],
-  out: { order: ResolvedPage[]; pages: Map<string, ResolvedPage> }
-): ManifestPage {
+  out: { order: ResolvedPage[]; pages: Map<string, ResolvedPage> },
+  loc: LocaleCtx
+): ResolvedPage {
   if (!isPlainObject(page)) throw new ManifestError("each page must be an object");
   const id = requireString(page.id, "page.id");
   if (!ID_PATTERN.test(id)) {
@@ -86,10 +121,10 @@ function validatePage(
   }
   if (seenIds.has(id)) throw new ManifestError(`duplicate id "${id}"`);
   seenIds.add(id);
-  const title = requireString(page.title, "page.title");
+  const title = resolveTitle(page.title, "page.title", loc.locale, loc.defaultLocale);
   const url = resolveSource(page.source as string, manifestUrl);
 
-  const normalized: ManifestPage = { id, title, source: page.source as string };
+  const normalized = { id, title, source: page.source as string } as ManifestPage & { title: string };
   if (typeof page.description === "string") normalized.description = page.description;
   if (typeof page.badge === "string") normalized.badge = page.badge;
   if (page.hidden === true) normalized.hidden = true;
@@ -113,7 +148,7 @@ function validatePage(
   if (out.pages.size > LIMITS.maxPages) {
     throw new ManifestError(`too many pages (limit ${LIMITS.maxPages})`);
   }
-  return normalized;
+  return resolved;
 }
 
 function validateSection(
@@ -122,7 +157,8 @@ function validateSection(
   seenIds: Set<string>,
   parentPath: string[],
   depth: number,
-  out: { order: ResolvedPage[]; pages: Map<string, ResolvedPage> }
+  out: { order: ResolvedPage[]; pages: Map<string, ResolvedPage> },
+  loc: LocaleCtx
 ): ManifestSection {
   if (!isPlainObject(section)) throw new ManifestError("each section must be an object");
   const id = requireString(section.id, "section.id");
@@ -131,7 +167,7 @@ function validateSection(
   }
   if (seenIds.has(id)) throw new ManifestError(`duplicate id "${id}"`);
   seenIds.add(id);
-  const title = requireString(section.title, "section.title");
+  const title = resolveTitle(section.title, "section.title", loc.locale, loc.defaultLocale);
   const path = [...parentPath, title];
 
   const normalized: ManifestSection = { id, title, pages: [], sections: [] };
@@ -140,13 +176,13 @@ function validateSection(
 
   if (section.pages !== undefined) {
     if (!Array.isArray(section.pages)) throw new ManifestError(`section "${id}" pages must be an array`);
-    normalized.pages = section.pages.map((p) => validatePage(p, manifestUrl, seenIds, path, out));
+    normalized.pages = section.pages.map((p) => validatePage(p, manifestUrl, seenIds, path, out, loc));
   }
   if (section.sections !== undefined) {
     if (depth >= 1) throw new ManifestError(`section "${id}" nests too deeply (max 1 level)`);
     if (!Array.isArray(section.sections)) throw new ManifestError(`section "${id}" sections must be an array`);
     normalized.sections = section.sections.map((s) =>
-      validateSection(s, manifestUrl, seenIds, path, depth + 1, out)
+      validateSection(s, manifestUrl, seenIds, path, depth + 1, out, loc)
     );
   }
   if ((normalized.pages?.length ?? 0) === 0 && (normalized.sections?.length ?? 0) === 0) {
@@ -249,7 +285,7 @@ function validateLanguages(input: unknown): ManifestLanguage[] {
  * Validate and normalize a raw manifest object fetched from `manifestUrl`.
  * Throws {@link ManifestError} on any structural or security violation.
  */
-export function normalizeManifest(raw: unknown, manifestUrl: string): ResolvedManifest {
+export function normalizeManifest(raw: unknown, manifestUrl: string, locale = ""): ResolvedManifest {
   if (!isPlainObject(raw)) throw new ManifestError("manifest must be a JSON object");
 
   const version = requireString(raw.version, "version");
@@ -258,14 +294,19 @@ export function normalizeManifest(raw: unknown, manifestUrl: string): ResolvedMa
       `manifest major ${majorOf(version)} is not supported by viewer major ${MANIFEST_MAJOR}`
     );
   }
-  const title = requireString(raw.title, "title");
+  const language = typeof raw.language === "string" ? raw.language : "en";
+  const languages = validateLanguages(raw.languages);
+  const defaultLocale = languages[0]?.code || language;
+  // Title itself may be a locale map.
+  const title = resolveTitle(raw.title, "title", locale || defaultLocale, defaultLocale);
   if (!Array.isArray(raw.sections) || raw.sections.length === 0) {
     throw new ManifestError(`"sections" must be a non-empty array`);
   }
 
+  const loc: LocaleCtx = { locale: locale || defaultLocale, defaultLocale };
   const out = { order: [] as ResolvedPage[], pages: new Map<string, ResolvedPage>() };
   const seenIds = new Set<string>();
-  const sections = raw.sections.map((s) => validateSection(s, manifestUrl, seenIds, [], 0, out));
+  const sections = raw.sections.map((s) => validateSection(s, manifestUrl, seenIds, [], 0, out, loc));
 
   if (out.pages.size === 0) throw new ManifestError("manifest must contain at least one page");
 
@@ -295,7 +336,7 @@ export function normalizeManifest(raw: unknown, manifestUrl: string): ResolvedMa
     raw: raw as unknown as Manifest,
     manifestUrl,
     title,
-    language: typeof raw.language === "string" ? raw.language : "en",
+    language,
     theme: typeof raw.theme === "string" ? raw.theme : "auto",
     homeId,
     features,
@@ -304,12 +345,11 @@ export function normalizeManifest(raw: unknown, manifestUrl: string): ResolvedMa
     sections,
     themes: validateThemes(raw.themes),
     links: validateLinks(raw.links),
-    languages: validateLanguages(raw.languages),
-    defaultLanguage: "",
+    languages,
+    defaultLanguage: defaultLocale,
   };
   const apiRef = validateApiReference(raw.apiReference);
   if (apiRef) resolved.apiReference = apiRef;
-  resolved.defaultLanguage = resolved.languages[0]?.code || resolved.language;
   if (typeof raw.logo === "string") {
     const logo = new URL(raw.logo, manifestUrl);
     if ((logo.protocol === "https:" || logo.protocol === "http:") && !logo.username && !logo.password) {
