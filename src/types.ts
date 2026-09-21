@@ -27,8 +27,12 @@ export type LocalizableString = string | Record<string, string>;
 export interface ManifestPage {
   id: string;
   title: LocalizableString;
-  /** URL to the Markdown source, resolved relative to the manifest URL. */
-  source: string;
+  /**
+   * Source of the Markdown, resolved relative to the manifest URL. May be a
+   * single path or a per-locale `{ locale: path }` map. Optional because a page
+   * can rely on convention-based path resolution.
+   */
+  source?: LocalizableString;
   /**
    * Optional per-locale Markdown sources. When the active locale has an entry
    * here, it overrides `source`; otherwise the viewer falls back to `source`.
@@ -126,13 +130,17 @@ export interface Manifest {
 }
 
 /** A page flattened into a lookup table with its resolved absolute source URL. */
-export interface ResolvedPage extends Omit<ManifestPage, "title"> {
+export interface ResolvedPage extends Omit<ManifestPage, "title" | "source"> {
   /** Title resolved to the active locale. */
   title: string;
-  /** Absolute URL of the default Markdown source. */
+  /** Primary absolute URL (first candidate) for the active locale. */
   url: string;
-  /** Absolute per-locale Markdown URLs (locale code → URL). */
-  localeUrls: Record<string, string>;
+  /**
+   * Ordered candidate URLs to try for the active locale. The loader fetches the
+   * first that responds successfully (convention-over-configuration fallback:
+   * explicit path → pages/<file> → pages/<locale>/<file>).
+   */
+  candidates: string[];
   /** Section path (titles) for breadcrumbs. */
   sectionPath: string[];
 }

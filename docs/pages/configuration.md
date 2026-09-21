@@ -37,7 +37,11 @@ The manifest is the only project-level configuration. Its explicit, validated sh
 | `search` | `on` | `on` / `off` |
 | `toc` | `auto` | `auto` / `on` / `off` |
 | `sidebar` | `auto` | `auto` / `open` / `closed` |
+| `mermaid` | off | Presence enables opt-in Mermaid diagrams |
+| `mermaid-src` | pinned CDN | Override the Mermaid ESM URL (self-host under strict CSP) |
 | `debug` | `false` | Local diagnostic logging only |
+
+For the full manifest structure — sections, pages, links, API reference, languages, per-locale sources and the convention-based path resolution — see **[Manifest reference](./manifest.md)**. To generate a ready-made project skeleton, see **[Start a new project](./scaffold.md)**.
 
 ## Routes and anchors
 

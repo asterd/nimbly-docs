@@ -12,7 +12,6 @@ import type {
   ManifestApiReference,
   ManifestLanguage,
   ManifestLink,
-  ManifestPage,
   ManifestSection,
   ManifestTheme,
   ResolvedManifest,
@@ -106,6 +105,83 @@ interface LocaleCtx {
   defaultLocale: string;
 }
 
+/** Validate a resolvable http(s)/relative source URL, returning its absolute href. */
+function resolveSourceOrNull(source: string, manifestUrl: string): string | null {
+  try {
+    return resolveSource(source, manifestUrl);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pick the raw source string for the active locale.
+ * Accepts `source` as a string or a `{ locale: path }` map, and merges `sources`.
+ */
+function pickLocalizedSource(page: Record<string, unknown>, loc: LocaleCtx): string | null {
+  const map: Record<string, string> = {};
+  if (isPlainObject(page.sources)) {
+    for (const [code, src] of Object.entries(page.sources)) {
+      if (typeof src === "string" && /^[a-z]{2,3}(-[a-z0-9]{2,8})?$/i.test(code)) map[code.toLowerCase()] = src;
+    }
+  }
+  if (isPlainObject(page.source)) {
+    for (const [code, src] of Object.entries(page.source)) {
+      if (typeof src === "string" && /^[a-z]{2,3}(-[a-z0-9]{2,8})?$/i.test(code)) map[code.toLowerCase()] = src;
+    }
+  }
+  const base = loc.locale.split("-")[0]!;
+  const fromMap =
+    map[loc.locale] ?? map[base] ?? map[loc.defaultLocale] ?? map[loc.defaultLocale.split("-")[0]!] ?? Object.values(map)[0];
+  if (fromMap) return fromMap;
+  if (typeof page.source === "string" && page.source) return page.source;
+  return null;
+}
+
+/** Resolve an optional localizable string (description) to the active locale, if present. */
+function resolveOptionalLocalized(value: unknown, loc: LocaleCtx): string | undefined {
+  if (typeof value === "string") return value || undefined;
+  if (isPlainObject(value)) {
+    const map = value as Record<string, unknown>;
+    const base = loc.locale.split("-")[0]!;
+    const pick = (c: string): string | undefined => (typeof map[c] === "string" && map[c] ? (map[c] as string) : undefined);
+    return pick(loc.locale) ?? pick(base) ?? pick(loc.defaultLocale) ?? undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Build the ordered list of candidate URLs for a page source, honouring the
+ * convention-over-configuration rule:
+ *   1. the explicit path as given (resolved against the manifest);
+ *   2. <manifestDir>/pages/<basename>;
+ *   3. <manifestDir>/pages/<locale>/<basename>.
+ * Duplicates are removed while preserving order. Only http(s) URLs are kept.
+ */
+function buildCandidates(source: string, manifestUrl: string, locale: string, defaultLocale: string): string[] {
+  const out: string[] = [];
+  const push = (s: string | null): void => {
+    if (s && !out.includes(s)) out.push(s);
+  };
+  const file = source.split("/").pop() || source;
+  const base = locale.split("-")[0]!;
+  const isDefault = locale === defaultLocale || base === defaultLocale.split("-")[0];
+
+  if (isDefault) {
+    // Default language: honour the explicit path, then the plain pages/ file.
+    push(resolveSourceOrNull(source, manifestUrl));
+    push(resolveSourceOrNull(`./pages/${file}`, manifestUrl));
+  } else {
+    // Non-default language: prefer the localized folder so it is not shadowed by
+    // the default-language file that lives directly under pages/.
+    if (locale !== base) push(resolveSourceOrNull(`./pages/${locale}/${file}`, manifestUrl));
+    push(resolveSourceOrNull(`./pages/${base}/${file}`, manifestUrl));
+    push(resolveSourceOrNull(source, manifestUrl));
+    push(resolveSourceOrNull(`./pages/${file}`, manifestUrl));
+  }
+  return out;
+}
+
 function validatePage(
   page: unknown,
   manifestUrl: string,
@@ -122,26 +198,22 @@ function validatePage(
   if (seenIds.has(id)) throw new ManifestError(`duplicate id "${id}"`);
   seenIds.add(id);
   const title = resolveTitle(page.title, "page.title", loc.locale, loc.defaultLocale);
-  const url = resolveSource(page.source as string, manifestUrl);
 
-  const normalized = { id, title, source: page.source as string } as ManifestPage & { title: string };
-  if (typeof page.description === "string") normalized.description = page.description;
+  // `source` may be a single string or a per-locale map; `sources` (a map) is
+  // also accepted and merged. Resolve the raw source string for the active locale.
+  const rawSource = pickLocalizedSource(page, loc);
+  if (!rawSource) throw new ManifestError(`page "${id}" is missing a usable source`);
+
+  const candidates = buildCandidates(rawSource, manifestUrl, loc.locale, loc.defaultLocale);
+  if (candidates.length === 0) throw new ManifestError(`page "${id}" source "${rawSource}" is not resolvable`);
+
+  const normalized = { id, title } as Omit<ResolvedPage, "url" | "candidates" | "sectionPath">;
+  const description = resolveOptionalLocalized(page.description, loc);
+  if (description) normalized.description = description;
   if (typeof page.badge === "string") normalized.badge = page.badge;
   if (page.hidden === true) normalized.hidden = true;
 
-  // Per-locale sources, each resolved and validated like the default source.
-  const localeUrls: Record<string, string> = {};
-  if (isPlainObject(page.sources)) {
-    const sources: Record<string, string> = {};
-    for (const [code, src] of Object.entries(page.sources)) {
-      if (typeof src !== "string" || !/^[a-z]{2,3}(-[a-z0-9]{2,8})?$/i.test(code)) continue;
-      localeUrls[code] = resolveSource(src, manifestUrl);
-      sources[code] = src;
-    }
-    if (Object.keys(sources).length > 0) normalized.sources = sources;
-  }
-
-  const resolved: ResolvedPage = { ...normalized, url, localeUrls, sectionPath };
+  const resolved: ResolvedPage = { ...normalized, url: candidates[0]!, candidates, sectionPath };
   out.pages.set(id, resolved);
   if (!normalized.hidden || true) out.order.push(resolved);
 

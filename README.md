@@ -125,6 +125,32 @@ npm run serve       # static server at http://localhost:8082/docs/
 
 Build dependencies are pinned in `package-lock.json`; none are bundled as production runtime dependencies. `npm run build` prints the immutable filename and SRI string. Use that filename in production, not an unpinned “latest” URL.
 
+### Scaffold a new documentation project
+
+Generate a ready-to-edit skeleton (manifest, host page, schema copy, and starter pages per language) instead of writing it by hand:
+
+```bash
+node scripts/create-docs.mjs my-docs --title "Acme Platform" --lang en,it
+# or
+npm run init -- my-docs --title "Acme Platform" --lang en,it
+# or, when installed
+npx nimbly-docs-init my-docs --title "Acme Platform" --lang en,it
+# or fully zero-install, straight from the CDN
+curl -fsSL https://asterd.github.io/nimbly-docs/cdn/create-docs.mjs \
+  | node - my-docs --title "Acme Platform" --lang en,it \
+    --bundle https://asterd.github.io/nimbly-docs/cdn/nimbly-docs.latest.min.js
+```
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `[targetDir]` | `docs` | Folder to create the project in. |
+| `--title` | `My Documentation` | Site title in the manifest and host page. |
+| `--lang` | `en` | Comma-separated locales; first is default. |
+| `--bundle` | `./assets/nimbly-docs.min.js` | Script URL written into `index.html`. |
+| `--force` | off | Overwrite existing files. |
+
+It produces `index.html`, `index.json` (convention-based sources), `manifest.schema.json`, and `pages/*.md` plus `pages/<lang>/*.md` for each extra language. Existing files are skipped unless `--force` is given.
+
 ## Web Component contract
 
 ```html
@@ -193,7 +219,11 @@ viewer.addEventListener("docs-error", ({ detail }) => console.warn(detail.code, 
 
 ## Manifest v1
 
-The published illustrative schema is [`docs/manifest.schema.json`](docs/manifest.schema.json). The bundled validator additionally enforces runtime URL and semantic checks.
+The published illustrative schema is [`docs/manifest.schema.json`](docs/manifest.schema.json). The bundled validator additionally enforces runtime URL and semantic checks. The demo's **Manifest reference** page ([`docs/pages/manifest.md`](docs/pages/manifest.md)) documents every field with a complete annotated example and a recommended folder structure.
+
+**Localizable values.** `title`, `description` and `source` accept a plain string or a `{ locale: value }` map, resolved as: exact locale → base language → default language → first value.
+
+**Convention over configuration.** `source` can be a bare filename; the viewer resolves it against a candidate list and uses the first that responds. For the default language: the explicit path, then `pages/<file>`. For a non-default language the localized folder wins first: `pages/<locale>/<file>` → `pages/<file>` → explicit path. So `"source": "overview.md"` loads `pages/overview.md` in the default language and `pages/it/overview.md` when Italian is active — no per-page map needed.
 
 ```jsonc
 {

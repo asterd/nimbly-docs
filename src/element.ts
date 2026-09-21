@@ -149,10 +149,7 @@ export class NimblyDocsElement extends HTMLElement {
     return this.manifest.defaultLanguage;
   }
 
-  /** The Markdown URL for a page in the active locale, falling back to default. */
-  private pageUrl(page: ResolvedPage): string {
-    return page.localeUrls[this.locale] ?? page.url;
-  }
+
 
   /** Mark only a direct-body viewer as page-owned; embedded viewers keep host layout. */
   private syncPageMode(): void {
@@ -256,7 +253,7 @@ export class NimblyDocsElement extends HTMLElement {
     this.themes.initialize(this.getAttribute("theme"), this.getAttribute("appearance"));
 
     this.sidebarView = new Sidebar(shell.sidebarNav, this.manifest, () => this.closeDrawer(), this.strings.documentation);
-    this.tocView = new Toc(shell.toc, () => this.closeDrawer());
+    this.tocView = new Toc(shell.toc, () => this.closeDrawer(), this.strings.onThisPage);
     this.searchView = this.manifest.features.search && opts.search
       ? new SearchController(this.manifest, shell.app, (id) => this.navigate(id))
       : null;
@@ -329,7 +326,7 @@ export class NimblyDocsElement extends HTMLElement {
     const sequence = ++this.navigating;
     this.renderPageLoading();
     try {
-      const markdown = await loader.fetchPage(this.pageUrl(page));
+      const markdown = await loader.fetchFirst(page.candidates);
       if (sequence !== this.navigating) return;
       const result = renderContent(markdown, { manifest, page, debug: this.options().debug, copyCode: manifest.features.copyCode, plugins: NimblyDocsElement.plugins });
       shell.content.replaceChildren(result.fragment);

@@ -1,4 +1,4 @@
-import { apiIcon, bookIcon, externalIcon, githubIcon, globeIcon, linkedinIcon, menuIcon } from "./icons.js";
+import { apiIcon, bookIcon, chevronIcon, externalIcon, githubIcon, globeIcon, linkedinIcon, menuIcon } from "./icons.js";
 import { DEFAULT_BRAND_TITLE } from "./constants.js";
 import type { ManifestApiReference, ManifestLanguage, ManifestLink } from "./types.js";
 import type { UIStrings } from "./i18n.js";
@@ -240,11 +240,13 @@ export function renderLanguageSelector(
   }
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "nd-icon-button nd-lang-button";
+  // Not an .nd-icon-button: that class forces a fixed 2.25rem grid cell which
+  // would stack the globe and the code onto two lines.
+  button.className = "nd-lang-button";
   button.setAttribute("aria-label", label);
   button.title = label;
   button.setAttribute("aria-haspopup", "listbox");
-  button.innerHTML = `${globeIcon()}<span class="nd-lang-code"></span>`;
+  button.innerHTML = `<span class="nd-lang-glyph" aria-hidden="true">${globeIcon()}</span><span class="nd-lang-code"></span><span class="nd-lang-caret" aria-hidden="true">${chevronIcon()}</span>`;
   const code = button.querySelector<HTMLElement>(".nd-lang-code")!;
   const activeLang = languages.find((l) => l.code === active) ?? languages[0]!;
   code.textContent = activeLang.code.toUpperCase();

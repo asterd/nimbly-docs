@@ -4,7 +4,11 @@ import type { TocEntry } from "./types.js";
 export class Toc {
   private observer: IntersectionObserver | null = null;
 
-  constructor(private readonly host: HTMLElement, private readonly onNavigate: () => void) {}
+  constructor(
+    private readonly host: HTMLElement,
+    private readonly onNavigate: () => void,
+    private readonly title = "On this page"
+  ) {}
 
   render(pageId: string, entries: TocEntry[]): void {
     this.disconnect();
@@ -12,7 +16,7 @@ export class Toc {
     const frag = document.createDocumentFragment();
     const title = document.createElement("p");
     title.className = "nd-toc-title";
-    title.textContent = "On this page";
+    title.textContent = this.title;
     frag.appendChild(title);
     for (const entry of entries) {
       const a = document.createElement("a");

@@ -38,6 +38,10 @@ if (existsSync(source + ".map")) {
 const sri = "sha384-" + createHash("sha384").update(bundle).digest("base64");
 writeFileSync(join(cdnDir, versioned + ".sha384"), sri + "\n");
 
+// Publish the scaffolder so it can be run zero-install via `curl … | node -`.
+const scaffolder = join(root, "scripts", "create-docs.mjs");
+if (existsSync(scaffolder)) cpSync(scaffolder, join(cdnDir, "create-docs.mjs"));
+
 // Rewrite the demo's bundle URL to carry the current content hash. Match the
 // filename regardless of any existing query/hash suffix so the script is
 // idempotent across repeated builds and fresh checkouts.
