@@ -1,0 +1,15 @@
+import type { ResolvedManifest } from "./types.js";
+export declare class Sidebar {
+    private readonly host;
+    private readonly manifest;
+    private readonly onNavigate;
+    private expanded;
+    private storageKey;
+    constructor(host: HTMLElement, manifest: ResolvedManifest, onNavigate: () => void);
+    render(activePageId: string): void;
+    private renderSection;
+    private renderPage;
+    private sectionContains;
+    private loadState;
+    private saveState;
+}
