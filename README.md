@@ -2,13 +2,14 @@
 
 > A secure, zero-runtime-dependency Markdown documentation viewer in one ESM bundle.
 
+[![Live demo](https://img.shields.io/badge/demo-live-2563eb)](https://asterd.github.io/nimbly-docs/)
 [![Build](https://github.com/asterd/nimbly-docs/actions/workflows/pages.yml/badge.svg)](../../actions/workflows/pages.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Bundle budget](https://img.shields.io/badge/gzip%20budget-%3C120%20KB-success)](#performance-and-caching)
 
 **Nimbly Docs** is a native `<nimbly-docs>` Web Component for documentation that ships alongside an application. It gives teams the practical UX expected from Docsify—nested navigation, hash routing, local search, page TOC, themes, code copy buttons, responsive design and Markdown—without frameworks, remote plugins, CDN resources, cookies or telemetry.
 
-> **Live demo:** enable GitHub Pages for the repository, then open `https://asterd.github.io/nimbly-docs/`. The ready-to-deploy demo lives in [`docs/`](docs/).
+> **Live demo:** [**https://asterd.github.io/nimbly-docs/**](https://asterd.github.io/nimbly-docs/) — the ready-to-deploy source lives in [`docs/`](docs/).
 
 ## Why Nimbly Docs?
 
@@ -40,6 +41,7 @@ The primary design boundary is intentional: **manifests describe documentation; 
 - **Header links**: manifest-declared GitHub / LinkedIn / external links rendered as icons, left of the appearance toggle.
 - **API reference link**: a pinned Swagger/OpenAPI link at the bottom of the sidebar.
 - **Multilingual**: manifest-declared languages, per-page Markdown variants, a header language selector, localized UI strings, and graceful fallback.
+- **Live palette selector**: opt-in `chooseThemes` header dropdown switches themes instantly (CSS tokens only, no reload); palette and light/dark appearance stay independent.
 - **Default appearance**: set `light` / `dark` / `auto` from the manifest or the `appearance` attribute; the reader can still override and their choice is remembered.
 - **Back to application**: an optional, localizable "back to app" header button (`backLink`) for docs embedded in a host app.
 - **Extensible carefully**: a small local plugin API for app-owned code, never remotely activated by content.

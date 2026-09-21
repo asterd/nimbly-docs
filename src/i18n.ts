@@ -25,6 +25,7 @@ export interface UIStrings {
   apiReference: string;
   poweredBy: string;
   backToApp: string;
+  theme: string;
 }
 
 const en: UIStrings = {
@@ -44,6 +45,7 @@ const en: UIStrings = {
   apiReference: "API reference",
   poweredBy: "Powered by",
   backToApp: "Back to app",
+  theme: "Theme",
 };
 
 const DICTIONARIES: Record<string, Partial<UIStrings>> = {
@@ -65,6 +67,7 @@ const DICTIONARIES: Record<string, Partial<UIStrings>> = {
     apiReference: "Riferimento API",
     poweredBy: "Powered by",
     backToApp: "Torna all'app",
+    theme: "Tema",
   },
   es: {
     searchPlaceholder: "Buscar en la documentación",
@@ -83,6 +86,7 @@ const DICTIONARIES: Record<string, Partial<UIStrings>> = {
     apiReference: "Referencia de API",
     poweredBy: "Powered by",
     backToApp: "Volver a la app",
+    theme: "Tema",
   },
   fr: {
     searchPlaceholder: "Rechercher dans la documentation",
@@ -101,6 +105,7 @@ const DICTIONARIES: Record<string, Partial<UIStrings>> = {
     apiReference: "Référence API",
     poweredBy: "Powered by",
     backToApp: "Retour à l'app",
+    theme: "Thème",
   },
   de: {
     searchPlaceholder: "Dokumentation durchsuchen",
@@ -119,6 +124,7 @@ const DICTIONARIES: Record<string, Partial<UIStrings>> = {
     apiReference: "API-Referenz",
     poweredBy: "Powered by",
     backToApp: "Zurück zur App",
+    theme: "Thema",
   },
 };
 

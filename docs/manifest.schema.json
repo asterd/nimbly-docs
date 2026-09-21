@@ -11,6 +11,12 @@
     "description": { "$ref": "#/$defs/localizable" },
     "language": { "type": "string" },
     "theme": { "type": "string" },
+    "chooseThemes": {
+      "oneOf": [
+        { "type": "boolean" },
+        { "type": "array", "items": { "type": "string" } }
+      ]
+    },
     "home": { "type": "string", "pattern": "^[a-z0-9][a-z0-9/_-]{0,127}$" },
     "appearance": { "enum": ["light", "dark", "auto"] },
     "backLink": { "$ref": "#/$defs/backLink" },

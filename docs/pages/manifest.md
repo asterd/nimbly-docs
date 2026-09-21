@@ -26,6 +26,10 @@
   // Default palette: nimbus | midnight | paper | sabbia | a custom theme name.
   "theme": "sabbia",
 
+  // Show a header palette selector for live switching. true = all built-ins;
+  // an array narrows the offered palettes, e.g. ["nimbus","midnight"].
+  "chooseThemes": true,
+
   // Optional brand logo (relative to the manifest). Falls back to a built-in glyph.
   "logo": "./assets/logo.svg",
 
@@ -115,6 +119,7 @@
 | `description` |  | localizable | Metadata/search text. |
 | `language` |  | string | Default content language (default `en`). |
 | `theme` |  | string | Built-in or custom palette name. |
+| `chooseThemes` |  | boolean \| string[] | Show a header palette selector; array narrows the choices. |
 | `appearance` |  | enum | Default `light` / `dark` / `auto` (attribute overrides it). |
 | `logo` |  | string | Relative/absolute image URL. |
 | `home` |  | id | Page for the empty route (else first page). |
@@ -152,6 +157,17 @@
 ### Links
 
 `type` selects the icon: `github`, `linkedin`, `external` (unknown types use a generic icon). `url` must be `https:` without embedded credentials; links open in a new tab with `rel="noopener noreferrer"`.
+
+## Live palette selector
+
+Set `chooseThemes` to add a palette dropdown in the header for switching themes live:
+
+```jsonc
+"chooseThemes": true                 // all built-in palettes
+"chooseThemes": ["nimbus", "midnight", "sabbia"]   // a curated subset
+```
+
+Switching a palette only swaps CSS tokens — the current page is **not** re-fetched or re-rendered — so it is instant and cheap. Palette (`theme`) and light/dark **appearance** remain independent: the palette dropdown changes colours, the appearance control changes the light/dark scheme. The reader's palette choice is persisted locally.
 
 ## Default appearance
 

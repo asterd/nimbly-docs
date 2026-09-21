@@ -1,4 +1,4 @@
-import { apiIcon, arrowLeftIcon, bookIcon, chevronIcon, externalIcon, githubIcon, globeIcon, linkedinIcon, menuIcon } from "./icons.js";
+import { apiIcon, arrowLeftIcon, bookIcon, chevronIcon, externalIcon, githubIcon, globeIcon, linkedinIcon, menuIcon, paletteIcon } from "./icons.js";
 import { DEFAULT_BRAND_TITLE } from "./constants.js";
 import type { ManifestApiReference, ManifestLanguage, ManifestLink } from "./types.js";
 import type { UIStrings } from "./i18n.js";
@@ -36,6 +36,7 @@ export interface ShellRefs {
   menuButton: HTMLButtonElement;
   appearanceButton: HTMLButtonElement;
   languageButton: HTMLButtonElement | null;
+  themeButton: HTMLButtonElement | null;
   search: HTMLElement;
   searchButton: HTMLButtonElement;
   sidebar: HTMLElement;
@@ -91,6 +92,7 @@ export function createShell(config: ShellConfig): ShellRefs {
       </div>
       <div class="nd-actions">
         <div class="nd-links" part="links"></div>
+        <div class="nd-theme-pick"></div>
         <div class="nd-lang"></div>
         <button class="nd-icon-button nd-appearance-button" type="button"></button>
       </div>
@@ -134,6 +136,7 @@ export function createShell(config: ShellConfig): ShellRefs {
     menuButton: pick(".nd-mobile-menu"),
     appearanceButton: pick(".nd-appearance-button"),
     languageButton: null,
+    themeButton: null,
     search: pick(".nd-search"),
     searchButton: pick(".nd-search-trigger"),
     sidebar: pick(".nd-sidebar"),
@@ -305,6 +308,76 @@ export function renderLanguageMenu(
   // Dismiss on outside click.
   const dismiss = (event: Event): void => {
     if (!menu.contains(event.target as Node) && event.target !== refs.languageButton) {
+      menu.remove();
+      refs.app.removeEventListener("click", dismiss, true);
+    }
+  };
+  setTimeout(() => refs.app.addEventListener("click", dismiss, true), 0);
+}
+
+/** Human label for a palette name. */
+function themeLabel(name: string): string {
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+/** Build the header palette selector. Returns the button, or null when disabled. */
+export function renderThemeSelector(
+  refs: ShellRefs,
+  choices: string[],
+  active: string,
+  label: string
+): HTMLButtonElement | null {
+  const host = refs.app.querySelector<HTMLElement>(".nd-theme-pick");
+  if (!host) return null;
+  host.replaceChildren();
+  if (choices.length < 2) {
+    host.hidden = true;
+    refs.themeButton = null;
+    return null;
+  }
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "nd-lang-button nd-theme-pick-button";
+  button.setAttribute("aria-label", label);
+  button.title = label;
+  button.setAttribute("aria-haspopup", "listbox");
+  button.innerHTML = `<span class="nd-lang-glyph" aria-hidden="true">${paletteIcon()}</span><span class="nd-theme-name"></span><span class="nd-lang-caret" aria-hidden="true">${chevronIcon()}</span>`;
+  button.querySelector<HTMLElement>(".nd-theme-name")!.textContent = themeLabel(choices.includes(active) ? active : choices[0]!);
+  host.appendChild(button);
+  host.hidden = false;
+  refs.themeButton = button;
+  return button;
+}
+
+/** Popover listing the available palettes. */
+export function renderThemeMenu(
+  refs: ShellRefs,
+  choices: string[],
+  active: string,
+  onSelect: (name: string) => void
+): void {
+  const host = refs.app.querySelector<HTMLElement>(".nd-theme-pick");
+  if (!host) return;
+  host.querySelector(".nd-lang-menu")?.remove();
+  const menu = document.createElement("div");
+  menu.className = "nd-lang-menu";
+  menu.setAttribute("role", "listbox");
+  for (const name of choices) {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "nd-lang-option";
+    option.setAttribute("role", "option");
+    option.setAttribute("aria-selected", String(name === active));
+    option.textContent = themeLabel(name);
+    option.addEventListener("click", () => {
+      menu.remove();
+      onSelect(name);
+    });
+    menu.appendChild(option);
+  }
+  host.appendChild(menu);
+  const dismiss = (event: Event): void => {
+    if (!menu.contains(event.target as Node) && event.target !== refs.themeButton) {
       menu.remove();
       refs.app.removeEventListener("click", dismiss, true);
     }

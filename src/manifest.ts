@@ -17,7 +17,7 @@ import type {
   ResolvedManifest,
   ResolvedPage,
 } from "./types.js";
-import { ID_PATTERN, LIMITS, MANIFEST_MAJOR } from "./constants.js";
+import { BUILT_IN_THEMES, ID_PATTERN, LIMITS, MANIFEST_MAJOR } from "./constants.js";
 
 export class ManifestError extends Error {
   constructor(message: string) {
@@ -419,12 +419,25 @@ export function normalizeManifest(raw: unknown, manifestUrl: string, locale = ""
     links: validateLinks(raw.links),
     languages,
     defaultLanguage: defaultLocale,
+    chooseThemes: false,
+    themeChoices: [],
   };
   const apiRef = validateApiReference(raw.apiReference);
   if (apiRef) resolved.apiReference = apiRef;
 
   if (raw.appearance === "light" || raw.appearance === "dark" || raw.appearance === "auto") {
     resolved.appearance = raw.appearance;
+  }
+
+  // Palette selector: `true` → all built-ins + custom themes; array → narrowed.
+  const allThemes = [...BUILT_IN_THEMES, ...resolved.themes.keys()];
+  if (Array.isArray(raw.chooseThemes)) {
+    const chosen = raw.chooseThemes.filter((t): t is string => typeof t === "string" && allThemes.includes(t));
+    resolved.themeChoices = chosen.length > 0 ? [...new Set(chosen)] : allThemes;
+    resolved.chooseThemes = chosen.length > 0;
+  } else {
+    resolved.chooseThemes = raw.chooseThemes === true;
+    resolved.themeChoices = allThemes;
   }
 
   if (isPlainObject(raw.backLink)) {

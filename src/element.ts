@@ -8,7 +8,7 @@ import { ManifestError, normalizeManifest } from "./manifest.js";
 import { handleCopyClick, renderContent } from "./render.js";
 import { Router, type Route } from "./router.js";
 import { SearchController } from "./search.js";
-import { applyBrand, createShell, renderLanguageMenu, renderLanguageSelector, type BrandConfig, type ShellRefs } from "./shell.js";
+import { applyBrand, createShell, renderLanguageMenu, renderLanguageSelector, renderThemeMenu, renderThemeSelector, type BrandConfig, type ShellRefs } from "./shell.js";
 import { Sidebar } from "./sidebar.js";
 import { ThemeManager, type Appearance, type ThemeState } from "./theme.js";
 import { Toc } from "./toc.js";
@@ -275,6 +275,20 @@ export class NimblyDocsElement extends HTMLElement {
       langButton.addEventListener("click", (event) => {
         event.stopPropagation();
         renderLanguageMenu(shell, this.manifest!.languages, this.locale, (code) => this.setLocale(code));
+      });
+    }
+
+    // Palette selector, only when the manifest enables chooseThemes.
+    if (this.manifest.chooseThemes) {
+      const themeButton = renderThemeSelector(shell, this.manifest.themeChoices, this.themes.get().theme, this.strings.theme);
+      themeButton?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        renderThemeMenu(shell, this.manifest!.themeChoices, this.themes!.get().theme, (name) => {
+          this.setTheme(name);
+          const nameEl = themeButton.querySelector<HTMLElement>(".nd-theme-name");
+          if (nameEl) nameEl.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+          announce(shell.live, `Theme: ${name}`);
+        });
       });
     }
 

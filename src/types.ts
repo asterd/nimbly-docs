@@ -118,6 +118,11 @@ export interface Manifest {
   language?: string;
   /** Default theme: a built-in name, a custom theme name, or "auto". */
   theme?: string;
+  /**
+   * Show a header palette selector for live theme switching. `true` offers all
+   * built-in themes; an array narrows the offered palette names.
+   */
+  chooseThemes?: boolean | string[];
   /** Logo URL (relative to manifest) or inline text handled by `title`. */
   logo?: string;
   /** id of the page shown when the route is empty. */
@@ -183,6 +188,10 @@ export interface ResolvedManifest {
   apiReference?: ManifestApiReference;
   /** Default appearance from the manifest, if declared. */
   appearance?: "light" | "dark" | "auto";
+  /** When true (or a non-empty list), show a header palette selector. */
+  chooseThemes: boolean;
+  /** The palette names offered in the selector (built-ins, unless narrowed). */
+  themeChoices: string[];
   /** Resolved back-to-app link (url + resolved label), if declared. */
   backLink?: { url: string; label: string };
   /** Available languages; empty when the docs are single-language. */

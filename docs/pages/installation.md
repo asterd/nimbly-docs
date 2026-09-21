@@ -22,7 +22,7 @@ Put the built bundle, an `index.json`, and your Markdown files on the same stati
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script type="module" src="/assets/nimbly-docs.0.0.3.<hash>.min.js"></script>
+    <script type="module" src="/assets/nimbly-docs.0.0.4.<hash>.min.js"></script>
   </head>
   <body>
     <nimbly-docs manifest="./index.json"></nimbly-docs>
@@ -38,7 +38,7 @@ You can also load a versioned bundle straight from GitHub Pages or jsDelivr inst
 
 ```html
 <script type="module"
-  src="https://asterd.github.io/nimbly-docs/cdn/nimbly-docs.0.0.3.min.js"
+  src="https://asterd.github.io/nimbly-docs/cdn/nimbly-docs.0.0.4.min.js"
   crossorigin="anonymous"></script>
 ```
 
@@ -60,7 +60,7 @@ When the viewer is served from another allowed origin, pin the exact bundle and 
 
 ```html
 <script type="module"
-  src="https://assets.example.com/nimbly-docs.0.0.3.<hash>.min.js"
+  src="https://assets.example.com/nimbly-docs.0.0.4.<hash>.min.js"
   integrity="sha384-…"
   crossorigin="anonymous"></script>
 ```

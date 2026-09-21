@@ -7,11 +7,12 @@
   "theme": "sabbia",
   "home": "welcome",
   "appearance": "auto",
+  "chooseThemes": true,
   "backLink": { "url": "https://github.com/asterd/nimbly-docs", "label": { "en": "Back to app", "it": "Torna all'app" } },
   "footer": "Nimbly Docs · zero runtime dependencies · no telemetry",
   "links": [
     { "type": "github", "url": "https://github.com/asterd/nimbly-docs" },
-    { "type": "linkedin", "url": "https://www.linkedin.com/", "label": "LinkedIn" },
+    { "type": "linkedin", "url": "https://www.linkedin.com/in/dario-d-urzo-470b2024", "label": "LinkedIn" },
     { "type": "external", "url": "https://mermaid.js.org/", "label": "Mermaid project" }
   ],
   "apiReference": { "url": "https://petstore.swagger.io/", "label": "API reference" },
