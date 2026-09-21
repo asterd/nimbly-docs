@@ -422,6 +422,28 @@ export function normalizeManifest(raw: unknown, manifestUrl: string, locale = ""
   };
   const apiRef = validateApiReference(raw.apiReference);
   if (apiRef) resolved.apiReference = apiRef;
+
+  if (raw.appearance === "light" || raw.appearance === "dark" || raw.appearance === "auto") {
+    resolved.appearance = raw.appearance;
+  }
+
+  if (isPlainObject(raw.backLink)) {
+    const url = typeof raw.backLink.url === "string" ? raw.backLink.url : null;
+    if (url) {
+      // Accept https, or same-app relative/absolute paths; reject dangerous schemes.
+      let ok = false;
+      try {
+        const u = new URL(url, manifestUrl);
+        ok = (u.protocol === "https:" || u.protocol === "http:") && !u.username && !u.password;
+      } catch {
+        ok = /^[./]/.test(url);
+      }
+      if (ok) {
+        const label = resolveOptionalLocalized(raw.backLink.label, loc) || "";
+        resolved.backLink = { url, label };
+      }
+    }
+  }
   if (typeof raw.logo === "string") {
     const logo = new URL(raw.logo, manifestUrl);
     if ((logo.protocol === "https:" || logo.protocol === "http:") && !logo.username && !logo.password) {

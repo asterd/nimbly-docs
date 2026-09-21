@@ -1,4 +1,4 @@
-import { apiIcon, bookIcon, chevronIcon, externalIcon, githubIcon, globeIcon, linkedinIcon, menuIcon } from "./icons.js";
+import { apiIcon, arrowLeftIcon, bookIcon, chevronIcon, externalIcon, githubIcon, globeIcon, linkedinIcon, menuIcon } from "./icons.js";
 import { DEFAULT_BRAND_TITLE } from "./constants.js";
 import type { ManifestApiReference, ManifestLanguage, ManifestLink } from "./types.js";
 import type { UIStrings } from "./i18n.js";
@@ -22,6 +22,8 @@ export interface ShellConfig {
   activeLanguage: string;
   /** Pinned API reference for the sidebar footer, if any. */
   apiReference?: ManifestApiReference;
+  /** Resolved "back to app" link, if declared. */
+  backLink?: { url: string; label: string };
   /** Localized UI strings. */
   strings: UIStrings;
 }
@@ -72,6 +74,10 @@ export function createShell(config: ShellConfig): ShellRefs {
     <header class="nd-header" part="header">
       <div class="nd-header-start">
         <button class="nd-icon-button nd-mobile-menu" type="button" aria-expanded="false">${menuIcon()}</button>
+        <a class="nd-back" part="back" hidden>
+          <span class="nd-back-icon" aria-hidden="true">${arrowLeftIcon()}</span>
+          <span class="nd-back-label"></span>
+        </a>
         <a class="nd-brand" part="brand">
           <span class="nd-brand-mark" aria-hidden="true">${bookIcon()}</span>
           <span class="nd-brand-label"></span>
@@ -145,6 +151,19 @@ export function createShell(config: ShellConfig): ShellRefs {
   applyBrand(refs, config.brand);
   refs.searchButton.querySelector<HTMLElement>(".nd-search-shortcut")!.textContent = config.shortcut;
   refs.search.hidden = !config.search;
+
+  // "Back to application" link, shown only when the manifest declares it.
+  const back = pick<HTMLAnchorElement>(".nd-back");
+  if (config.backLink) {
+    const label = config.backLink.label || s.backToApp;
+    back.href = config.backLink.url;
+    back.setAttribute("aria-label", label);
+    back.title = label;
+    back.querySelector<HTMLElement>(".nd-back-label")!.textContent = label;
+    back.hidden = false;
+  } else {
+    back.hidden = true;
+  }
 
   renderLinks(pick(".nd-links"), config.links);
   renderApiReference(pick(".nd-sidebar-footer"), config.apiReference, s.apiReference);

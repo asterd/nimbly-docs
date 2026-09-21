@@ -32,6 +32,14 @@
   // Page id shown when the route is empty.
   "home": "overview",
 
+  // Default appearance when the host sets no attribute and the user has no
+  // stored preference: "light" | "dark" | "auto".
+  "appearance": "auto",
+
+  // Optional "back to application" link shown at the start of the header when
+  // the docs are embedded in a host app. Label is localizable.
+  "backLink": { "url": "https://app.acme.example", "label": { "en": "Back to app", "it": "Torna all'app" } },
+
   // Optional footer text rendered above the fixed "Powered by" line.
   "footer": "Internal documentation — Acme Inc.",
 
@@ -107,8 +115,10 @@
 | `description` |  | localizable | Metadata/search text. |
 | `language` |  | string | Default content language (default `en`). |
 | `theme` |  | string | Built-in or custom palette name. |
+| `appearance` |  | enum | Default `light` / `dark` / `auto` (attribute overrides it). |
 | `logo` |  | string | Relative/absolute image URL. |
 | `home` |  | id | Page for the empty route (else first page). |
+| `backLink` |  | object | `{ url, label? }` "back to app" link; `label` is localizable. |
 | `footer` |  | string | Text above the fixed "Powered by" line. |
 | `links` |  | array | Header icon links (see below). |
 | `apiReference` |  | object | Pinned sidebar link `{ url, label? }`. |
@@ -142,6 +152,28 @@
 ### Links
 
 `type` selects the icon: `github`, `linkedin`, `external` (unknown types use a generic icon). `url` must be `https:` without embedded credentials; links open in a new tab with `rel="noopener noreferrer"`.
+
+## Default appearance
+
+`appearance` sets the initial colour scheme when neither the `appearance` HTML attribute nor a stored user preference is present:
+
+- `light` / `dark` — force a scheme;
+- `auto` — follow the operating system and react to live changes.
+
+The header control always lets the reader override this, and their choice is remembered locally. The `appearance` attribute on `<nimbly-docs>` takes precedence over the manifest value.
+
+## Back to application
+
+When the docs are opened from a host application (for example as a docked page), declare `backLink` to render a clearly labelled button at the start of the header:
+
+```jsonc
+"backLink": {
+  "url": "https://app.example/dashboard",
+  "label": { "en": "Back to app", "it": "Torna all'app" }
+}
+```
+
+The label is localizable and defaults to a translated "Back to app" when omitted. The link accepts an `http(s)` URL or a same-app relative path. The brand/logo intentionally keeps its role as the documentation home, so the return action is a separate, explicit control.
 
 ## Localizable values
 

@@ -244,13 +244,16 @@ export class NimblyDocsElement extends HTMLElement {
       languages: this.manifest.languages,
       activeLanguage: this.locale,
       apiReference: this.manifest.apiReference,
+      backLink: this.manifest.backLink,
       strings: this.strings,
     });
     this.root.append(style, shell.app);
     this.shell = shell;
 
     this.themes = new ThemeManager(this, this.manifest, (state) => this.onThemeChange(state));
-    this.themes.initialize(this.getAttribute("theme"), this.getAttribute("appearance"));
+    // Attribute wins; otherwise the manifest's declared default appearance is used.
+    const appearanceAttr = this.getAttribute("appearance") ?? this.manifest.appearance ?? null;
+    this.themes.initialize(this.getAttribute("theme"), appearanceAttr);
 
     this.sidebarView = new Sidebar(shell.sidebarNav, this.manifest, () => this.closeDrawer(), this.strings.documentation);
     this.tocView = new Toc(shell.toc, () => this.closeDrawer(), this.strings.onThisPage);

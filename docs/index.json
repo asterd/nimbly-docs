@@ -6,6 +6,8 @@
   "language": "en",
   "theme": "sabbia",
   "home": "welcome",
+  "appearance": "auto",
+  "backLink": { "url": "https://github.com/asterd/nimbly-docs", "label": { "en": "Back to app", "it": "Torna all'app" } },
   "footer": "Nimbly Docs · zero runtime dependencies · no telemetry",
   "links": [
     { "type": "github", "url": "https://github.com/asterd/nimbly-docs" },

@@ -12,6 +12,8 @@
     "language": { "type": "string" },
     "theme": { "type": "string" },
     "home": { "type": "string", "pattern": "^[a-z0-9][a-z0-9/_-]{0,127}$" },
+    "appearance": { "enum": ["light", "dark", "auto"] },
+    "backLink": { "$ref": "#/$defs/backLink" },
     "logo": { "type": "string" },
     "editBase": { "type": "string" },
     "footer": { "type": "string" },
@@ -73,6 +75,15 @@
       "properties": {
         "url": { "type": "string", "format": "uri" },
         "label": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "backLink": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": { "type": "string" },
+        "label": { "$ref": "#/$defs/localizable" }
       },
       "additionalProperties": false
     },

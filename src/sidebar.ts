@@ -30,8 +30,8 @@ export class Sidebar {
   private renderSection(section: ManifestSection, activePageId: string): HTMLElement {
     const group = document.createElement("section");
     group.className = "nd-nav-section";
-    const containsActive = this.sectionContains(section, activePageId);
-    const expanded = containsActive || this.expanded.has(section.id);
+    // A section is open if the user expanded it OR it holds the active page.
+    const expanded = this.expanded.has(section.id) || this.sectionContains(section, activePageId);
 
     const btn = document.createElement("button");
     btn.type = "button";
@@ -39,10 +39,16 @@ export class Sidebar {
     btn.setAttribute("aria-expanded", String(expanded));
     btn.setAttribute("aria-controls", `nd-section-${cssSafe(section.id)}`);
     btn.innerHTML = `${chevronIcon()}<span>${escapeHtml(str(section.title))}</span>`;
-    btn.addEventListener("click", () => {
-      if (this.expanded.has(section.id)) this.expanded.delete(section.id); else this.expanded.add(section.id);
+    // Toggle only this section in-place. Rebuilding the whole tree on every
+    // click was fragile and dropped focus/handlers; here we just flip state.
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      const isOpen = btn.getAttribute("aria-expanded") === "true";
+      const next = !isOpen;
+      if (next) this.expanded.add(section.id); else this.expanded.delete(section.id);
       this.saveState();
-      this.render(activePageId);
+      btn.setAttribute("aria-expanded", String(next));
+      list.hidden = !next;
     });
     group.appendChild(btn);
 

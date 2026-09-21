@@ -62,6 +62,14 @@ export interface ManifestApiReference {
   label?: string;
 }
 
+/** A "return to the host application" link rendered at the start of the header. */
+export interface ManifestBackLink {
+  /** Absolute or relative URL of the host application. */
+  url: string;
+  /** Localizable label; defaults to a translated "Back to app". */
+  label?: LocalizableString;
+}
+
 /** A UI language the documentation is available in. */
 export interface ManifestLanguage {
   /** BCP-47-ish code, e.g. "en", "it". */
@@ -114,6 +122,10 @@ export interface Manifest {
   logo?: string;
   /** id of the page shown when the route is empty. */
   home?: string;
+  /** Default appearance when no attribute/stored preference exists. */
+  appearance?: "light" | "dark" | "auto";
+  /** A "back to application" link shown in the header when embedded in a host app. */
+  backLink?: ManifestBackLink;
   /** Base URL used to build "edit this page" links, e.g. a repo tree URL. */
   editBase?: string;
   /** Footer HTML-free text rendered at the bottom of the content. */
@@ -169,6 +181,10 @@ export interface ResolvedManifest {
   links: ManifestLink[];
   /** Validated API reference link, if any. */
   apiReference?: ManifestApiReference;
+  /** Default appearance from the manifest, if declared. */
+  appearance?: "light" | "dark" | "auto";
+  /** Resolved back-to-app link (url + resolved label), if declared. */
+  backLink?: { url: string; label: string };
   /** Available languages; empty when the docs are single-language. */
   languages: ManifestLanguage[];
   /** Default language code (first declared, else manifest `language`). */

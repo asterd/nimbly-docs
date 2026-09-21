@@ -40,6 +40,8 @@ The primary design boundary is intentional: **manifests describe documentation; 
 - **Header links**: manifest-declared GitHub / LinkedIn / external links rendered as icons, left of the appearance toggle.
 - **API reference link**: a pinned Swagger/OpenAPI link at the bottom of the sidebar.
 - **Multilingual**: manifest-declared languages, per-page Markdown variants, a header language selector, localized UI strings, and graceful fallback.
+- **Default appearance**: set `light` / `dark` / `auto` from the manifest or the `appearance` attribute; the reader can still override and their choice is remembered.
+- **Back to application**: an optional, localizable "back to app" header button (`backLink`) for docs embedded in a host app.
 - **Extensible carefully**: a small local plugin API for app-owned code, never remotely activated by content.
 
 ## Docsify parity and differences
