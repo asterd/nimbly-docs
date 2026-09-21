@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Nimbly Docs interactive demo">
+    <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+    <title>Nimbly Docs — Demo</title>
+    <!-- `npm run pages` copies the current built bundle here. -->
+    <script type="module" src="./assets/nimbly-docs.min.js?v=c5a7d53ed9ec"></script>
+  </head>
+  <body>
+    <nimbly-docs
+      manifest="./index.json"
+      theme="sabbia"
+      locale="en"
+      router="hash"
+      search="on"
+      toc="auto"
+      sidebar="auto"
+      mermaid="on"
+    ></nimbly-docs>
+  </body>
+</html>

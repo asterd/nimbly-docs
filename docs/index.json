@@ -1,0 +1,73 @@
+{
+  "$schema": "./manifest.schema.json",
+  "version": "1.0",
+  "title": "Nimbly Docs",
+  "description": "A secure, single-bundle Markdown documentation viewer",
+  "language": "en",
+  "theme": "sabbia",
+  "home": "welcome",
+  "footer": "Nimbly Docs · zero runtime dependencies · no telemetry",
+  "features": {
+    "search": true,
+    "toc": true,
+    "copyCode": true,
+    "previousNext": true,
+    "breadcrumbs": true,
+    "sidebar": { "collapsible": true, "defaultExpanded": ["getting-started"] }
+  },
+  "themes": [
+    {
+      "name": "ocean",
+      "base": "nimbus",
+      "light": {
+        "color-bg": "#f5fbff",
+        "color-surface": "#ffffff",
+        "color-text": "#102a43",
+        "color-brand": "#0077b6",
+        "color-brand-strong": "#005f92",
+        "color-border": "#c6e5f5"
+      }
+    }
+  ],
+  "sections": [
+    {
+      "id": "getting-started",
+      "title": "Getting started",
+      "pages": [
+        { "id": "welcome", "title": "Welcome", "source": "./pages/welcome.md", "description": "What Nimbly Docs is and why it exists.", "badge": "new" },
+        { "id": "installation", "title": "Installation", "source": "./pages/installation.md" },
+        { "id": "configuration", "title": "Configuration", "source": "./pages/configuration.md" }
+      ]
+    },
+    {
+      "id": "guides",
+      "title": "Guides",
+      "sections": [
+        {
+          "id": "guides-content",
+          "title": "Content",
+          "pages": [
+            { "id": "markdown", "title": "Markdown features", "source": "./pages/markdown.md" },
+            { "id": "security", "title": "Security model", "source": "./pages/security.md" }
+          ]
+        },
+        {
+          "id": "guides-customization",
+          "title": "Customization",
+          "pages": [
+            { "id": "themes", "title": "Themes", "source": "./pages/themes.md" },
+            { "id": "diagrams", "title": "Diagrams (Mermaid)", "source": "./pages/diagrams.md", "badge": "opt-in" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reference",
+      "title": "Reference",
+      "pages": [
+        { "id": "api", "title": "Component API", "source": "./pages/api.md" },
+        { "id": "technical", "title": "Technical details", "source": "./pages/technical.md" }
+      ]
+    }
+  ]
+}

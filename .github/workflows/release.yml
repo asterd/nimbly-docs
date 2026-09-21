@@ -1,0 +1,62 @@
+name: Release
+
+# Publishes a public, versioned build of the viewer bundle.
+# Trigger by pushing a semver tag, e.g.:
+#   git tag v1.0.0 && git push origin v1.0.0
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version tag to build (e.g. v1.0.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run size
+      - name: Collect artifacts
+        id: artifacts
+        run: |
+          mkdir -p release
+          cp dist/nimbly-docs.*.min.js release/
+          cp dist/nimbly-docs.*.min.js.map release/
+          cp dist/nimbly-docs.*.min.js.sha384 release/
+          bundle=$(basename $(ls dist/nimbly-docs.*.min.js | head -1))
+          echo "bundle=$bundle" >> "$GITHUB_OUTPUT"
+          echo "sri=$(cat dist/*.sha384)" >> "$GITHUB_OUTPUT"
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+          body: |
+            ## Nimbly Docs ${{ github.ref_name }}
+
+            Public, pinned bundle for production use.
+
+            **Bundle:** `${{ steps.artifacts.outputs.bundle }}`
+            **SRI:** `${{ steps.artifacts.outputs.sri }}`
+
+            ### Use it (jsDelivr, served from this release tag)
+
+            ```html
+            <script type="module"
+              src="https://cdn.jsdelivr.net/gh/${{ github.repository }}@${{ github.ref_name }}/dist/${{ steps.artifacts.outputs.bundle }}"
+              crossorigin="anonymous"></script>
+            ```
+
+            Or download the attached bundle and host it yourself with
+            `Cache-Control: public, max-age=31536000, immutable`.
