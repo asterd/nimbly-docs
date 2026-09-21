@@ -9,6 +9,9 @@
  */
 import type {
   Manifest,
+  ManifestApiReference,
+  ManifestLanguage,
+  ManifestLink,
   ManifestPage,
   ManifestSection,
   ManifestTheme,
@@ -91,7 +94,19 @@ function validatePage(
   if (typeof page.badge === "string") normalized.badge = page.badge;
   if (page.hidden === true) normalized.hidden = true;
 
-  const resolved: ResolvedPage = { ...normalized, url, sectionPath };
+  // Per-locale sources, each resolved and validated like the default source.
+  const localeUrls: Record<string, string> = {};
+  if (isPlainObject(page.sources)) {
+    const sources: Record<string, string> = {};
+    for (const [code, src] of Object.entries(page.sources)) {
+      if (typeof src !== "string" || !/^[a-z]{2,3}(-[a-z0-9]{2,8})?$/i.test(code)) continue;
+      localeUrls[code] = resolveSource(src, manifestUrl);
+      sources[code] = src;
+    }
+    if (Object.keys(sources).length > 0) normalized.sources = sources;
+  }
+
+  const resolved: ResolvedPage = { ...normalized, url, localeUrls, sectionPath };
   out.pages.set(id, resolved);
   if (!normalized.hidden || true) out.order.push(resolved);
 
@@ -176,6 +191,60 @@ function sanitizeTokens(input: Record<string, unknown>): Record<string, string> 
   return out;
 }
 
+/** Validate an external, https-only URL without embedded credentials. */
+function safeExternalUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:") return null;
+  if (url.username || url.password) return null;
+  return url.href;
+}
+
+function validateLinks(input: unknown): ManifestLink[] {
+  if (!Array.isArray(input)) return [];
+  const out: ManifestLink[] = [];
+  for (const raw of input) {
+    if (!isPlainObject(raw)) continue;
+    const url = safeExternalUrl(raw.url);
+    if (!url) continue;
+    const type = typeof raw.type === "string" ? raw.type : "external";
+    const link: ManifestLink = { type, url };
+    if (typeof raw.label === "string" && raw.label.trim()) link.label = raw.label.trim();
+    out.push(link);
+  }
+  return out;
+}
+
+function validateApiReference(input: unknown): ManifestApiReference | undefined {
+  if (!isPlainObject(input)) return undefined;
+  const url = safeExternalUrl(input.url);
+  if (!url) return undefined;
+  const ref: ManifestApiReference = { url };
+  if (typeof input.label === "string" && input.label.trim()) ref.label = input.label.trim();
+  return ref;
+}
+
+function validateLanguages(input: unknown): ManifestLanguage[] {
+  if (!Array.isArray(input)) return [];
+  const out: ManifestLanguage[] = [];
+  const seen = new Set<string>();
+  for (const raw of input) {
+    if (!isPlainObject(raw)) continue;
+    if (typeof raw.code !== "string" || !/^[a-z]{2,3}(-[a-z0-9]{2,8})?$/i.test(raw.code)) continue;
+    const code = raw.code.toLowerCase();
+    if (seen.has(code)) continue;
+    const label = typeof raw.label === "string" && raw.label.trim() ? raw.label.trim() : code;
+    seen.add(code);
+    out.push({ code, label });
+  }
+  return out;
+}
+
 /**
  * Validate and normalize a raw manifest object fetched from `manifestUrl`.
  * Throws {@link ManifestError} on any structural or security violation.
@@ -234,7 +303,13 @@ export function normalizeManifest(raw: unknown, manifestUrl: string): ResolvedMa
     pages: out.pages,
     sections,
     themes: validateThemes(raw.themes),
+    links: validateLinks(raw.links),
+    languages: validateLanguages(raw.languages),
+    defaultLanguage: "",
   };
+  const apiRef = validateApiReference(raw.apiReference);
+  if (apiRef) resolved.apiReference = apiRef;
+  resolved.defaultLanguage = resolved.languages[0]?.code || resolved.language;
   if (typeof raw.logo === "string") {
     const logo = new URL(raw.logo, manifestUrl);
     if ((logo.protocol === "https:" || logo.protocol === "http:") && !logo.username && !logo.password) {

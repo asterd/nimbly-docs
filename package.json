@@ -1,6 +1,6 @@
 {
   "name": "nimbly-docs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A single-bundle, zero-dependency, embeddable Markdown documentation viewer Web Component. A modern, secure alternative to Docsify.",
   "type": "module",
   "license": "MIT",

@@ -37,6 +37,9 @@ The primary design boundary is intentional: **manifests describe documentation; 
 - **Accessibility**: semantic landmarks, skip link, visible focus, live page announcements, keyboard search/drawer controls and reduced-motion support.
 - **Themes**: `nimbus`, `midnight`, `paper`, adaptive `auto`, and warm **`sabbia`**—inspired by Shootly’s sand/taupe aesthetic. Token-only custom themes are supported.
 - **Optional diagrams**: opt-in Mermaid rendering (`mermaid="on"`), lazy-loaded only when a page contains a diagram, in strict security mode.
+- **Header links**: manifest-declared GitHub / LinkedIn / external links rendered as icons, left of the appearance toggle.
+- **API reference link**: a pinned Swagger/OpenAPI link at the bottom of the sidebar.
+- **Multilingual**: manifest-declared languages, per-page Markdown variants, a header language selector, localized UI strings, and graceful fallback.
 - **Extensible carefully**: a small local plugin API for app-owned code, never remotely activated by content.
 
 ## Docsify parity and differences
@@ -231,6 +234,37 @@ The published illustrative schema is [`docs/manifest.schema.json`](docs/manifest
   }]
 }
 ```
+
+### Header links, API reference and languages (v0.0.2)
+
+```jsonc
+{
+  "links": [
+    { "type": "github",   "url": "https://github.com/acme/docs" },
+    { "type": "linkedin", "url": "https://www.linkedin.com/company/acme" },
+    { "type": "external", "url": "https://acme.example", "label": "Website" }
+  ],
+  "apiReference": { "url": "https://api.acme.example/swagger", "label": "API reference" },
+  "languages": [
+    { "code": "en", "label": "English" },
+    { "code": "it", "label": "Italiano" }
+  ],
+  "sections": [{
+    "id": "start", "title": "Start",
+    "pages": [{
+      "id": "intro", "title": "Introduction",
+      "source": "./intro.md",
+      "sources": { "en": "./intro.md", "it": "./it/intro.md" }
+    }]
+  }]
+}
+```
+
+- **`links`**: header icons (github/linkedin/external; unknown types use a generic icon). URLs must be `https:` with no credentials; they open in a new tab with `rel="noopener noreferrer"`.
+- **`apiReference`**: a single pinned link at the bottom of the sidebar for Swagger/OpenAPI or any external reference. Nimbly Docs links to it rather than embedding a heavy renderer.
+- **`languages`** + per-page **`sources`**: the header shows a language selector when two or more languages are declared. The active locale selects the page's `sources[locale]`, falling back to `source`. UI strings are localized from a built-in dictionary (en, it, es, fr, de) with English fallback; the choice is stored under `nimbly-docs:locale`.
+
+A small, tasteful **"Powered by Nimbly Docs"** footer is always rendered and is not configurable away; your own `footer` text renders above it.
 
 ### Validation and limits
 

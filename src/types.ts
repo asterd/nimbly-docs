@@ -26,12 +26,41 @@ export interface ManifestPage {
   title: string;
   /** URL to the Markdown source, resolved relative to the manifest URL. */
   source: string;
+  /**
+   * Optional per-locale Markdown sources. When the active locale has an entry
+   * here, it overrides `source`; otherwise the viewer falls back to `source`.
+   */
+  sources?: Record<string, string>;
   /** Optional short description used in search and metadata. */
   description?: string;
   /** Optional badge shown next to the page in the sidebar (e.g. "new", "beta"). */
   badge?: string;
   /** Hide from the sidebar but keep routable. */
   hidden?: boolean;
+}
+
+/** A social or external link shown as an icon in the header. */
+export interface ManifestLink {
+  /** Determines the icon; unknown types fall back to a generic external icon. */
+  type: "github" | "linkedin" | "external" | string;
+  /** Absolute https URL. */
+  url: string;
+  /** Accessible label; defaults to a sensible name per type. */
+  label?: string;
+}
+
+/** A pinned reference link (e.g. Swagger/OpenAPI) shown at the bottom of the sidebar. */
+export interface ManifestApiReference {
+  url: string;
+  label?: string;
+}
+
+/** A UI language the documentation is available in. */
+export interface ManifestLanguage {
+  /** BCP-47-ish code, e.g. "en", "it". */
+  code: string;
+  /** Human label shown in the language selector, e.g. "English". */
+  label: string;
 }
 
 /** A navigable group of pages. Sections may nest one level of subsections. */
@@ -82,6 +111,12 @@ export interface Manifest {
   editBase?: string;
   /** Footer HTML-free text rendered at the bottom of the content. */
   footer?: string;
+  /** Social/external links rendered as header icons. */
+  links?: ManifestLink[];
+  /** Pinned API reference (Swagger/OpenAPI) link in the sidebar footer. */
+  apiReference?: ManifestApiReference;
+  /** Available UI/content languages. The first entry is the default. */
+  languages?: ManifestLanguage[];
   features?: ManifestFeatures;
   themes?: ManifestTheme[];
   sections: ManifestSection[];
@@ -89,8 +124,10 @@ export interface Manifest {
 
 /** A page flattened into a lookup table with its resolved absolute source URL. */
 export interface ResolvedPage extends ManifestPage {
-  /** Absolute URL of the Markdown source. */
+  /** Absolute URL of the default Markdown source. */
   url: string;
+  /** Absolute per-locale Markdown URLs (locale code → URL). */
+  localeUrls: Record<string, string>;
   /** Section path (titles) for breadcrumbs. */
   sectionPath: string[];
 }
@@ -115,6 +152,14 @@ export interface ResolvedManifest {
   logo?: string;
   editBase?: string;
   footer?: string;
+  /** Validated header links. */
+  links: ManifestLink[];
+  /** Validated API reference link, if any. */
+  apiReference?: ManifestApiReference;
+  /** Available languages; empty when the docs are single-language. */
+  languages: ManifestLanguage[];
+  /** Default language code (first declared, else manifest `language`). */
+  defaultLanguage: string;
 }
 
 /** Structured error emitted through the `docs-error` event. */

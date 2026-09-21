@@ -8,10 +8,11 @@ import { ManifestError, normalizeManifest } from "./manifest.js";
 import { handleCopyClick, renderContent } from "./render.js";
 import { Router, type Route } from "./router.js";
 import { SearchController } from "./search.js";
-import { applyBrand, createShell, type BrandConfig, type ShellRefs } from "./shell.js";
+import { applyBrand, createShell, renderLanguageMenu, renderLanguageSelector, type BrandConfig, type ShellRefs } from "./shell.js";
 import { Sidebar } from "./sidebar.js";
 import { ThemeManager, type Appearance, type ThemeState } from "./theme.js";
 import { Toc } from "./toc.js";
+import { persistedLocale, persistLocale, stringsFor, type UIStrings } from "./i18n.js";
 import type { DocsError, NimblyPlugin, ResolvedManifest, ResolvedPage, ViewerOptions } from "./types.js";
 
 const DEFAULTS: ViewerOptions = {
@@ -51,6 +52,8 @@ export class NimblyDocsElement extends HTMLElement {
   private themes: ThemeManager | null = null;
   private initialized = false;
   private navigating = 0;
+  private locale = "";
+  private strings: UIStrings = stringsFor("en");
 
   connectedCallback(): void {
     this.syncPageMode();
@@ -100,6 +103,48 @@ export class NimblyDocsElement extends HTMLElement {
 
   /** Open the full client-side search dialog. */
   openSearch(): void { this.searchView?.open(); }
+
+  /** Cycle to the next available colour palette (built-ins then manifest themes). */
+  cyclePalette(): string {
+    if (!this.themes) return "nimbus";
+    const all = this.themes.themes();
+    const at = all.indexOf(this.themes.get().theme);
+    const next = all[(at + 1) % all.length]!;
+    const applied = this.setTheme(next);
+    if (this.shell) announce(this.shell.live, `Palette: ${applied}`);
+    return applied;
+  }
+
+  /** Switch the active content/UI language and re-render the current page. */
+  setLocale(code: string): void {
+    if (!this.manifest) return;
+    const available = this.manifest.languages.map((l) => l.code);
+    const next = available.includes(code) ? code : this.manifest.defaultLanguage;
+    if (next === this.locale) return;
+    this.locale = next;
+    persistLocale(next);
+    this.strings = stringsFor(next);
+    document.documentElement.setAttribute("lang", next);
+    // Rebuild the shell so all localized labels update, then re-render the route.
+    this.mountShell(this.options());
+    this.router.start((route) => void this.onRoute(route));
+  }
+
+  /** Resolve the initial locale from attribute, storage, then manifest default. */
+  private resolveLocale(opts: ViewerOptions): string {
+    if (!this.manifest || this.manifest.languages.length === 0) return this.manifest?.language ?? "en";
+    const codes = this.manifest.languages.map((l) => l.code);
+    const attr = opts.locale.toLowerCase();
+    if (attr && codes.includes(attr)) return attr;
+    const stored = persistedLocale();
+    if (stored && codes.includes(stored)) return stored;
+    return this.manifest.defaultLanguage;
+  }
+
+  /** The Markdown URL for a page in the active locale, falling back to default. */
+  private pageUrl(page: ResolvedPage): string {
+    return page.localeUrls[this.locale] ?? page.url;
+  }
 
   /** Mark only a direct-body viewer as page-owned; embedded viewers keep host layout. */
   private syncPageMode(): void {
@@ -152,6 +197,9 @@ export class NimblyDocsElement extends HTMLElement {
       const raw = await this.loader.fetchManifest(manifestUrl);
       this.manifest = normalizeManifest(raw, manifestUrl);
       this.initialized = true;
+      this.locale = this.resolveLocale(opts);
+      this.strings = stringsFor(this.locale);
+      if (this.manifest.languages.length > 0) document.documentElement.setAttribute("lang", this.locale);
       this.mountShell(opts);
       for (const plugin of NimblyDocsElement.plugins) {
         plugin.setup?.({ manifest: this.manifest, navigate: (id) => this.navigate(id), setTheme: (name) => this.setTheme(name) });
@@ -168,6 +216,10 @@ export class NimblyDocsElement extends HTMLElement {
 
   private mountShell(opts: ViewerOptions): void {
     if (!this.manifest) return;
+    // Re-mounting (e.g. on locale switch) must not stack router listeners.
+    this.router.stop();
+    this.tocView?.disconnect();
+    this.searchView?.destroy();
     this.root.replaceChildren();
     const style = document.createElement("style");
     style.textContent = styles;
@@ -176,7 +228,11 @@ export class NimblyDocsElement extends HTMLElement {
       brand: this.brandConfig(),
       search: this.manifest.features.search && opts.search,
       shortcut: this.searchShortcut(),
-      palette: false,
+      links: this.manifest.links,
+      languages: this.manifest.languages,
+      activeLanguage: this.locale,
+      apiReference: this.manifest.apiReference,
+      strings: this.strings,
     });
     this.root.append(style, shell.app);
     this.shell = shell;
@@ -184,7 +240,7 @@ export class NimblyDocsElement extends HTMLElement {
     this.themes = new ThemeManager(this, this.manifest, (state) => this.onThemeChange(state));
     this.themes.initialize(this.getAttribute("theme"), this.getAttribute("appearance"));
 
-    this.sidebarView = new Sidebar(shell.sidebar, this.manifest, () => this.closeDrawer());
+    this.sidebarView = new Sidebar(shell.sidebarNav, this.manifest, () => this.closeDrawer(), this.strings.documentation);
     this.tocView = new Toc(shell.toc, () => this.closeDrawer());
     this.searchView = this.manifest.features.search && opts.search
       ? new SearchController(this.manifest, shell.app, (id) => this.navigate(id))
@@ -194,10 +250,18 @@ export class NimblyDocsElement extends HTMLElement {
     shell.menuButton.addEventListener("click", () => this.toggleDrawer());
     shell.scrim.addEventListener("click", () => this.closeDrawer());
     shell.appearanceButton.addEventListener("click", () => this.themes?.cycleAppearance());
-    shell.paletteButton.addEventListener("click", () => this.cyclePalette());
     shell.searchButton.addEventListener("click", () => this.openSearch());
     shell.app.addEventListener("click", (event) => { void handleCopyClick(event.target); });
     this.root.addEventListener("keydown", (event) => this.onGlobalKeydown(event as KeyboardEvent));
+
+    // Language selector, only when more than one language is declared.
+    const langButton = renderLanguageSelector(shell, this.manifest.languages, this.locale, this.strings.language);
+    if (langButton) {
+      langButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        renderLanguageMenu(shell, this.manifest!.languages, this.locale, (code) => this.setLocale(code));
+      });
+    }
 
     if (this.manifest.footer) { shell.footer.textContent = this.manifest.footer; shell.footer.hidden = false; }
   }
@@ -241,15 +305,6 @@ export class NimblyDocsElement extends HTMLElement {
     if (this.shell) applyBrand(this.shell, this.brandConfig());
   }
 
-  private cyclePalette(): void {
-    if (!this.themes) return;
-    const all = this.themes.themes();
-    const at = all.indexOf(this.themes.get().theme);
-    const next = all[(at + 1) % all.length]!;
-    this.setTheme(next);
-    if (this.shell) announce(this.shell.live, `Palette: ${next}`);
-  }
-
   private async onRoute(route: Route): Promise<void> {
     const manifest = this.manifest, shell = this.shell, loader = this.loader;
     if (!manifest || !shell || !loader) return;
@@ -259,7 +314,7 @@ export class NimblyDocsElement extends HTMLElement {
     const sequence = ++this.navigating;
     this.renderPageLoading();
     try {
-      const markdown = await loader.fetchPage(page.url);
+      const markdown = await loader.fetchPage(this.pageUrl(page));
       if (sequence !== this.navigating) return;
       const result = renderContent(markdown, { manifest, page, debug: this.options().debug, copyCode: manifest.features.copyCode, plugins: NimblyDocsElement.plugins });
       shell.content.replaceChildren(result.fragment);
@@ -295,8 +350,8 @@ export class NimblyDocsElement extends HTMLElement {
     if (!manifest.features.previousNext) { shell.pagination.hidden = true; return; }
     const at = manifest.order.findIndex((p) => p.id === page.id), prev = manifest.order[at - 1], next = manifest.order[at + 1];
     shell.pagination.replaceChildren();
-    if (prev) shell.pagination.appendChild(this.pageLink(prev, "Previous", "nd-page-prev")); else shell.pagination.appendChild(document.createElement("span"));
-    if (next) shell.pagination.appendChild(this.pageLink(next, "Next", "nd-page-next"));
+    if (prev) shell.pagination.appendChild(this.pageLink(prev, this.strings.previous, "nd-page-prev")); else shell.pagination.appendChild(document.createElement("span"));
+    if (next) shell.pagination.appendChild(this.pageLink(next, this.strings.next, "nd-page-next"));
     shell.pagination.hidden = !prev && !next;
   }
 
@@ -335,7 +390,7 @@ export class NimblyDocsElement extends HTMLElement {
     if (!anchor || !this.shell) { window.scrollTo({ top: 0, behavior: "auto" }); return; }
     requestAnimationFrame(() => this.root.querySelector<HTMLElement>(`#${CSS.escape(anchor)}`)?.scrollIntoView({ block: "start" }));
   }
-  private toggleDrawer(): void { if (!this.shell) return; const open = this.shell.app.dataset.drawerOpen !== "true"; this.shell.app.dataset.drawerOpen = String(open); this.shell.scrim.hidden = !open; this.shell.menuButton.setAttribute("aria-expanded", String(open)); this.shell.menuButton.setAttribute("aria-label", open ? "Close navigation" : "Open navigation"); }
-  private closeDrawer(): void { if (!this.shell) return; this.shell.app.dataset.drawerOpen = "false"; this.shell.scrim.hidden = true; this.shell.menuButton.setAttribute("aria-expanded", "false"); this.shell.menuButton.setAttribute("aria-label", "Open navigation"); }
+  private toggleDrawer(): void { if (!this.shell) return; const open = this.shell.app.dataset.drawerOpen !== "true"; this.shell.app.dataset.drawerOpen = String(open); this.shell.scrim.hidden = !open; this.shell.menuButton.setAttribute("aria-expanded", String(open)); this.shell.menuButton.setAttribute("aria-label", open ? this.strings.closeNav : this.strings.openNav); }
+  private closeDrawer(): void { if (!this.shell) return; this.shell.app.dataset.drawerOpen = "false"; this.shell.scrim.hidden = true; this.shell.menuButton.setAttribute("aria-expanded", "false"); this.shell.menuButton.setAttribute("aria-label", this.strings.openNav); }
   private debug(cause: unknown): void { if (this.options().debug) console.debug("[nimbly-docs]", cause); }
 }

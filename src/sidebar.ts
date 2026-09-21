@@ -10,7 +10,8 @@ export class Sidebar {
   constructor(
     private readonly host: HTMLElement,
     private readonly manifest: ResolvedManifest,
-    private readonly onNavigate: () => void
+    private readonly onNavigate: () => void,
+    private readonly navTitle = "Documentation"
   ) {
     this.storageKey = SIDEBAR_STATE_PREFIX + new URL(manifest.manifestUrl).pathname;
     this.loadState();
@@ -20,7 +21,7 @@ export class Sidebar {
     const frag = document.createDocumentFragment();
     const title = document.createElement("p");
     title.className = "nd-nav-title";
-    title.textContent = "Documentation";
+    title.textContent = this.navTitle;
     frag.appendChild(title);
     for (const section of this.manifest.sections) frag.appendChild(this.renderSection(section, activePageId));
     this.host.replaceChildren(frag);
