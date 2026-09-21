@@ -2,13 +2,13 @@
 
 > A secure, zero-runtime-dependency Markdown documentation viewer in one ESM bundle.
 
-[![Build](https://github.com/OWNER/nimbly-docs/actions/workflows/pages.yml/badge.svg)](../../actions/workflows/pages.yml)
+[![Build](https://github.com/asterd/nimbly-docs/actions/workflows/pages.yml/badge.svg)](../../actions/workflows/pages.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Bundle budget](https://img.shields.io/badge/gzip%20budget-%3C120%20KB-success)](#performance-and-caching)
 
 **Nimbly Docs** is a native `<nimbly-docs>` Web Component for documentation that ships alongside an application. It gives teams the practical UX expected from Docsify—nested navigation, hash routing, local search, page TOC, themes, code copy buttons, responsive design and Markdown—without frameworks, remote plugins, CDN resources, cookies or telemetry.
 
-> **Live demo:** enable GitHub Pages for the repository, then open `https://OWNER.github.io/nimbly-docs/`. The ready-to-deploy demo lives in [`docs/`](docs/).
+> **Live demo:** enable GitHub Pages for the repository, then open `https://asterd.github.io/nimbly-docs/`. The ready-to-deploy demo lives in [`docs/`](docs/).
 
 ## Why Nimbly Docs?
 
@@ -386,7 +386,7 @@ The repository contains a fully working demo under [`docs/`](docs/), and [`.gith
 4. copies the bundle into the Pages artifact;
 5. deploys `docs/` using the official GitHub Pages actions.
 
-In repository settings, set **Pages → Build and deployment → Source → GitHub Actions**. Replace the `OWNER` placeholder in the badge/demo URLs if this project is forked or renamed. The deployed demo is the same site as the local `docs/` demo, built with the current bundle.
+In repository settings, set **Pages → Build and deployment → Source → GitHub Actions**. If you fork or rename this project, update the `asterd/nimbly-docs` references in the badge and URLs. The deployed demo is the same site as the local `docs/` demo, built with the current bundle.
 
 ## Hosting the bundle on GitHub
 
@@ -398,7 +398,7 @@ Yes — GitHub can host the final JavaScript. The viewer is a static ESM file, s
 
 ```html
 <script type="module"
-  src="https://OWNER.github.io/nimbly-docs/cdn/nimbly-docs.0.0.1.min.js"
+  src="https://asterd.github.io/nimbly-docs/cdn/nimbly-docs.0.0.1.min.js"
   crossorigin="anonymous"></script>
 ```
 
@@ -417,11 +417,11 @@ The workflow also publishes the built bundle to a dedicated `cdn` branch (becaus
 
 ```html
 <script type="module"
-  src="https://cdn.jsdelivr.net/gh/OWNER/nimbly-docs@cdn/cdn/nimbly-docs.0.0.1.<hash>.min.js"
+  src="https://cdn.jsdelivr.net/gh/asterd/nimbly-docs@cdn/cdn/nimbly-docs.0.0.1.<hash>.min.js"
   crossorigin="anonymous"></script>
 ```
 
-> Note: `https://cdn.jsdelivr.net/gh/OWNER/nimbly-docs@vX.Y.Z/dist/…` does **not** work, because `dist/` is not committed on `main`. Use the `@cdn/cdn/…` path above, the GitHub Pages `/cdn/` path, or the bundle attached to the GitHub Release.
+> Note: `https://cdn.jsdelivr.net/gh/asterd/nimbly-docs@vX.Y.Z/dist/…` does **not** work, because `dist/` is not committed on `main`. Use the `@cdn/cdn/…` path above, the GitHub Pages `/cdn/` path, or the bundle attached to the GitHub Release.
 
 Both approaches are free, cacheable and versioned. For the strongest guarantees use Subresource Integrity (the `.sha384` value is attached to the release).
 
