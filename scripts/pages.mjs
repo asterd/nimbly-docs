@@ -38,14 +38,18 @@ if (existsSync(source + ".map")) {
 const sri = "sha384-" + createHash("sha384").update(bundle).digest("base64");
 writeFileSync(join(cdnDir, versioned + ".sha384"), sri + "\n");
 
+// Rewrite the demo's bundle URL to carry the current content hash. Match the
+// filename regardless of any existing query/hash suffix so the script is
+// idempotent across repeated builds and fresh checkouts.
 const index = readFileSync(indexPath, "utf8");
-const updated = index.replace(
-  /\.\/assets\/nimbly-docs\.min\.js(?:\?v=[^"']*)?/,
-  `./assets/nimbly-docs.min.js?v=${contentHash}`
-);
-if (updated === index) {
-  console.error("Could not find the Nimbly Docs bundle script in docs/index.html.");
-  process.exit(1);
+const scriptRef = /(\.\/assets\/nimbly-docs\.min\.js)(\?[^"'\s>]*)?/;
+let updated = index;
+if (scriptRef.test(index)) {
+  updated = index.replace(scriptRef, `$1?v=${contentHash}`);
+} else {
+  // Not fatal: the demo may reference the bundle differently. Warn and continue
+  // so the Pages deploy is never blocked by a cosmetic cache-busting step.
+  console.warn("⚠ Nimbly Docs bundle <script> not found in docs/index.html; skipped cache-busting.");
 }
 writeFileSync(indexPath, updated);
 console.log(`✔ copied bundle into docs/assets (cache key ${contentHash})`);
