@@ -71,7 +71,8 @@
           "title": { "en": "Customization", "it": "Personalizzazione" },
           "pages": [
             { "id": "themes", "title": "Themes", "source": "themes.md" },
-            { "id": "diagrams", "title": "Diagrams (Mermaid)", "source": "diagrams.md", "badge": "opt-in" }
+            { "id": "diagrams", "title": "Diagrams (Mermaid)", "source": "diagrams.md", "badge": "opt-in" },
+            { "id": "pele-test", "title": "Pele engine test", "source": "pele-test.md", "badge": "trial" }
           ]
         }
       ]

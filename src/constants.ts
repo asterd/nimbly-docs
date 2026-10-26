@@ -21,11 +21,13 @@ export const APPEARANCES = ["light", "dark", "auto"] as const;
 export const DEFAULT_BRAND_TITLE = "Nimbly Docs";
 
 /**
- * Default, pinned Mermaid ESM URL used only when diagram rendering is explicitly
- * enabled. Kept out of the base bundle to honour the size budget; hosts under a
- * strict CSP can override it with a same-origin/self-hosted copy.
+ * Default, pinned diagram-engine ESM URL used only when diagram rendering is
+ * explicitly enabled. We use Pele (https://github.com/obsidianmd/pele), which
+ * renders Mermaid syntax to SVG at a fraction of Mermaid.js' size. Kept out of
+ * the base bundle to honour the size budget; hosts under a strict CSP can
+ * override it with a same-origin/self-hosted copy.
  */
-export const DEFAULT_MERMAID_SRC = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+export const DEFAULT_MERMAID_SRC = "https://cdn.jsdelivr.net/npm/pele@1/dist/pele.js";
 
 /** namespaced localStorage prefix for per-manifest sidebar state. */
 export const SIDEBAR_STATE_PREFIX = "nimbly-docs:sidebar:";
