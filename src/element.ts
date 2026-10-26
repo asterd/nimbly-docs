@@ -314,11 +314,12 @@ export class NimblyDocsElement extends HTMLElement {
     button.setAttribute("aria-label", APPEARANCE_LABEL[state.appearance]);
     button.setAttribute("title", APPEARANCE_LABEL[state.appearance]);
     button.dataset.appearance = state.appearance;
-    // Diagrams bake their palette at render time, so re-render them on scheme change.
+    // Pele diagrams follow CSS variables, so a scheme change needs no re-render;
+    // this call is a cheap no-op once blocks are already rendered.
     void this.renderDiagrams();
   }
 
-  /** Render any Mermaid diagrams in the current page, honouring the active scheme. */
+  /** Render any Mermaid-syntax diagrams in the current page (via Pele). */
   private async renderDiagrams(): Promise<void> {
     const opts = this.options();
     const content = this.shell?.content;

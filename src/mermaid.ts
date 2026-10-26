@@ -1,38 +1,53 @@
 /**
- * Optional Mermaid diagram support.
+ * Optional Mermaid-syntax diagram support, rendered by Pele.
  *
- * Mermaid is a large library, so it is intentionally kept OUT of the base
- * bundle to honour the size budget and the "no implicit runtime dependency"
- * rule. It is loaded lazily, from a host-approved URL, ONLY when:
+ * Pele (https://github.com/obsidianmd/pele) renders Mermaid *syntax* to SVG
+ * with its own parser and layout engine. It is roughly 7x smaller than
+ * Mermaid.js, synchronous, and themeable through CSS variables — so diagrams
+ * follow the active appearance WITHOUT a re-render.
+ *
+ * It is still intentionally kept OUT of the base bundle to honour the size
+ * budget and the "no implicit runtime dependency" rule. It is loaded lazily,
+ * from a host-approved URL, ONLY when:
  *   1. the host explicitly opts in (attribute `mermaid` or manifest feature), and
  *   2. the current page actually contains a ```mermaid code block.
  *
- * The diagram source is authored content, never remote configuration, and
- * Mermaid's own security level is pinned to "strict" so it cannot execute
- * scripts, click handlers, or inject raw HTML.
+ * The diagram source is authored content, never remote configuration. Pele
+ * escapes diagram text, filters links/styles and caps input/output size, so a
+ * diagram cannot execute scripts or inject raw HTML. We additionally pass the
+ * rendered SVG through an inert DOMParser and adopt only the <svg> root.
  */
 
 export interface MermaidConfig {
-  /** Whether Mermaid rendering is enabled. */
+  /** Whether diagram rendering is enabled. */
   enabled: boolean;
-  /** Pinned module URL to import Mermaid from (ESM). */
+  /** Pinned module URL to import Pele from (ESM). */
   src: string;
-  /** Dark mode toggle so diagrams follow the active appearance. */
+  /**
+   * Dark mode flag. Kept for API compatibility; Pele reacts to CSS variables,
+   * so the scheme is driven by the host stylesheet rather than this flag.
+   */
   dark: boolean;
 }
 
-interface MermaidApi {
-  initialize(config: Record<string, unknown>): void;
-  render(id: string, text: string): Promise<{ svg: string; bindFunctions?: (el: Element) => void }>;
+/** Minimal surface of the Pele API we depend on. */
+interface PeleApi {
+  render(
+    source: string,
+    options?: { fontFamily?: string; idPrefix?: string; maxWidth?: number; responsive?: boolean },
+  ): { svg: string };
 }
 
-let loader: Promise<MermaidApi | null> | null = null;
+let loader: Promise<PeleApi | null> | null = null;
 let counter = 0;
 
-async function load(src: string): Promise<MermaidApi | null> {
+async function load(src: string): Promise<PeleApi | null> {
   if (!loader) {
     loader = import(/* @vite-ignore */ src)
-      .then((mod: { default?: MermaidApi } & Partial<MermaidApi>) => (mod.default ?? (mod as unknown as MermaidApi)))
+      .then((mod: Partial<PeleApi> & { default?: Partial<PeleApi> }) => {
+        const api = (mod.render ? mod : mod.default) as PeleApi | undefined;
+        return api && typeof api.render === "function" ? api : null;
+      })
       .catch(() => null);
   }
   return loader;
@@ -47,33 +62,30 @@ export function hasMermaid(root: ParentNode): boolean {
  * Find every ```mermaid block in the rendered content and replace it with a
  * rendered SVG. Blocks that fail to parse keep their original (escaped) source
  * so the page is never left blank.
+ *
+ * Colours come from CSS variables (`--pele-*`) set on the `.nd-mermaid`
+ * wrapper, so diagrams follow light/dark without being re-rendered.
  */
 export async function renderMermaid(root: ParentNode, config: MermaidConfig): Promise<void> {
   if (!config.enabled) return;
   const blocks = Array.from(root.querySelectorAll<HTMLElement>('pre > code[data-lang="mermaid"]'));
   if (blocks.length === 0) return;
 
-  const mermaid = await load(config.src);
-  if (!mermaid) return;
-
-  mermaid.initialize({
-    startOnLoad: false,
-    securityLevel: "strict",
-    theme: config.dark ? "dark" : "default",
-    flowchart: { htmlLabels: false },
-  });
+  const pele = await load(config.src);
+  if (!pele) return;
 
   for (const code of blocks) {
     const pre = code.parentElement;
     if (!pre) continue;
     const source = code.textContent ?? "";
-    const id = `nd-mermaid-${Date.now().toString(36)}-${counter++}`;
+    const prefix = `nd-mermaid-${Date.now().toString(36)}-${counter++}`;
     try {
-      const { svg } = await mermaid.render(id, source);
+      // Measure labels with the same font the content uses.
+      const fontFamily = getComputedStyle(code).fontFamily || undefined;
+      const { svg } = pele.render(source, { fontFamily, idPrefix: prefix, responsive: true });
       const figure = document.createElement("figure");
       figure.className = "nd-mermaid";
-      // `svg` is produced by Mermaid in strict mode (no scripts/handlers). We
-      // parse it inertly and adopt only the <svg> root to avoid document.write.
+      // Parse inertly and adopt only the <svg> root to avoid document.write.
       const parsed = new DOMParser().parseFromString(svg, "image/svg+xml");
       const el = parsed.documentElement;
       if (el && el.nodeName.toLowerCase() === "svg") {
