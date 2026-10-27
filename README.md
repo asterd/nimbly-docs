@@ -32,7 +32,7 @@ The primary design boundary is intentional: **manifests describe documentation; 
 - **Manifest-first IA**: validated nested sections, globally unique stable ids, page limits, relative URL resolution, home page and feature switches.
 - **Hash routing**: deep links such as `#/api/orders#cancellation`, refresh support, browser back/forward, no server rewrite rules.
 - **Safe Markdown**: headings, links, images, lists, task lists, blockquotes, tables, inline/fenced code (with optional titles) and compact highlighting. Raw HTML is escaped.
-- **Interactive components ("MDX-lite")**: `:::` directives for callouts, tabs, code groups with a synced language switch, steps, cards and details, plus GitHub alerts (`> [!NOTE]`). They are declarative only: the parser emits sanitized markup, and the viewer adds behaviour and ARIA afterwards. MDX itself is deliberately unsupported.
+- **Interactive components ("MDX-lite")**: `:::` directives for callouts, tabs, code groups (language switch), steps, cards, details and inline `:badge[...]` chips, plus GitHub alerts (`> [!NOTE]`). They are declarative only: the parser emits sanitized markup, and the viewer adds behaviour and ARIA afterwards. MDX itself is deliberately unsupported.
 - **Versioned docs**: the root manifest lists versions; readers get a header version selector, `legacy`/`unreleased` banners and `#/@version/page` deep links. `nimbly-docs-version` freezes a release.
 - **Defense in depth**: HTML allow-list sanitization, hostile URL rejection, no inline SVG, no event handlers, lazy images, atomic fragment rendering.
 - **Search**: local progressive index; `Cmd/Ctrl+K` dialog; title/heading/full-text scoring; no server or third-party service.
@@ -355,7 +355,7 @@ sudo apt install nodejs
 :::
 ````
 
-Code groups share the reader's language choice across the page (stored as `nimbly-docs:tabs:<key>`). Directives also include `steps`, `cards`/`card` and `details`. Nesting closes by depth and a `:::` line inside a code fence is ignored. The parser only emits allow-listed tags with `data-*` hints; buttons, ARIA and icons are added after sanitization. See the live docs' *Interactive components* page.
+Tab groups and code groups are independent by default. Give several groups the same `{sync=key}` and they switch together; the reader's choice is stored as `nimbly-docs:tabs:<key>`. Inline `:badge[trial]` renders a small chip, coloured by its text (new, trial, deprecated, opt-in…). Directives also include `steps`, `cards`/`card` and `details`. Nesting closes by depth and a `:::` line inside a code fence is ignored. The parser only emits allow-listed tags with `data-*` hints; buttons, ARIA and icons are added after sanitization. See the live docs' *Interactive components* page.
 
 ## Versioned docs
 
@@ -562,11 +562,11 @@ Mermaid rendering is opt-in and lazy. Enable it with `mermaid="on"`; the library
 
 | Metric | Value |
 | --- | --- |
-| Raw (minified) | ~117 KB |
-| **Gzip** | **~32 KB** |
-| Brotli | ~28 KB |
+| Raw (minified) | ~120 KB |
+| **Gzip** | **~33 KB** |
+| Brotli | ~29 KB |
 | Gzip budget | 120 KB |
-| Headroom | ~88 KB |
+| Headroom | ~87 KB |
 
 These figures cover the parser, sanitizer, search, UI, icons, all themes and highlighting; optional Mermaid is excluded because it loads lazily. `npm run size` prints exact numbers per build and gates releases. The deployed demo’s *Technical details* page reproduces this table.
 

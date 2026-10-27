@@ -1,6 +1,6 @@
 # Start a new project
 
-`create-docs` scaffolds a complete, ready-to-edit documentation folder so you don't hand-write the manifest and directory layout from scratch. It follows the same conventions the viewer resolves at runtime.
+`create-docs` creates a documentation folder with a manifest, a host page and starter pages, laid out the way the viewer expects.
 
 ## Run it
 
@@ -12,24 +12,24 @@ node scripts/create-docs.mjs my-docs --title "Acme Platform" --lang en,it
 npm run init -- my-docs --title "Acme Platform" --lang en,it
 ```
 
-If the package is installed, the bundled binary is available too:
+If the package is installed, you can use its binary:
 
 ```bash
 npx nimbly-docs-init my-docs --title "Acme Platform" --lang en,it
 ```
 
-## Zero-install (remote, nothing downloaded)
+## Without installing anything
 
-Because the scaffolder is a plain ESM script, you can run it straight from the CDN without cloning the repo or installing a package. Pipe it into Node via stdin:
+The scaffolder is a plain ESM script, so you can run it from the CDN without cloning the repository or installing a package. Pipe it into Node:
 
 ```bash
 curl -fsSL https://asterd.github.io/nimbly-docs/cdn/create-docs.mjs \
   | node - my-docs --title "Acme Platform" --lang en,it --bundle https://asterd.github.io/nimbly-docs/cdn/nimbly-docs.latest.min.js
 ```
 
-Everything after `node -` is passed to the script as arguments. In this mode the script fetches `manifest.schema.json` from the CDN and writes it into your project, so `$schema` still resolves; if the network is unavailable it falls back to referencing the schema by its remote URL. Pointing `--bundle` at the public CDN means the generated `index.html` needs no local build at all.
+Arguments after `node -` are passed to the script. In this mode it downloads `manifest.schema.json` from the CDN into your project; if that fails, `$schema` points to the remote URL instead. With `--bundle` set to the CDN, the generated `index.html` works without a local build.
 
-> `node <url>` cannot execute a remote URL directly and `npx` needs a published package, so the `curl … | node -` pipe is the reliable zero-install path.
+Node can't run a remote URL directly and `npx` needs a published package, which is why this uses `curl … | node -`.
 
 ## Options
 
@@ -57,22 +57,22 @@ my-docs/
       └─ quick-start.md
 ```
 
-With `--lang en,it` the manifest includes a `languages` block (so the header language selector appears), and Italian starter pages are created under `pages/it/`. Because sources use bare filenames, the viewer resolves `pages/introduction.md` for English and `pages/it/introduction.md` for Italian automatically.
+With `--lang en,it` the manifest gets a `languages` block, which adds the language menu to the header, and Italian pages are created under `pages/it/`. Sources are plain file names, so the viewer loads `pages/introduction.md` in English and `pages/it/introduction.md` in Italian.
 
 ## After scaffolding
 
-1. Copy the built viewer bundle to `my-docs/assets/nimbly-docs.min.js` (or point `--bundle` at a CDN URL such as the GitHub Pages `/cdn/` path).
+1. Copy the viewer bundle to `my-docs/assets/nimbly-docs.min.js`, or point `--bundle` at a CDN URL such as the GitHub Pages `/cdn/` path.
 2. Serve the folder with any static server and open `index.html`.
-3. Edit `index.json` to shape the navigation, then write your Markdown under `pages/`.
+3. Edit `index.json` to set up the navigation, then write your pages under `pages/`.
 
-The generated files are a starting point: safe to edit, rename or delete. Re-running without `--force` never clobbers your work.
+You can edit, rename or delete any generated file. Running the command again without `--force` leaves existing files alone.
 
 ## Freeze a release
 
-When you ship a new release, freeze the current docs as a version before you edit them:
+Before you start documenting a new release, save the current docs as a version:
 
 ```bash
 npx nimbly-docs-version 1.x --docs my-docs --label "v1.x"
 ```
 
-This copies the manifest, pages and images to `my-docs/versions/1.x/` and registers the copy in the root manifest. The header then shows a version selector. See [Versioned docs](./versions.md).
+This copies the manifest, pages and images to `my-docs/versions/1.x/` and adds the copy to the root manifest. The header then shows a version menu. See [Versioned docs](./versions.md).

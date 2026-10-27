@@ -1,11 +1,11 @@
 # Themes
 
-A theme is a set of CSS tokens, never arbitrary injected CSS. Branding stays flexible and a manifest can never become executable.
+A theme is a set of CSS custom properties (tokens). The manifest can set token values but can't inject CSS, so a theme never becomes a way to load code.
 
-A theme works on two levels:
+Each theme defines:
 
-- **Palette.** Colours for both a light and a dark scheme. The light/dark/auto appearance is a separate control, so every theme works in both.
-- **Skin.** Structural tokens such as type size, line height, heading weight, header and sidebar colours, and the style of the active navigation item. Skins let a theme change its feel, not just its colours.
+- a **palette**: colours for a light and a dark scheme. Light, dark and auto are chosen separately, so every theme supports both;
+- a **skin**: type size, line height, heading weight, header and sidebar colours, and how the current page is highlighted in the sidebar. This is what makes `material` or `stellar` look different beyond their colours.
 
 ## Built-in themes
 
@@ -20,15 +20,15 @@ A theme works on two levels:
 | `stellar` | Dark-first, vivid violet accent, filled active nav item | Starlight (Astro) |
 | `evergreen` | White navbar, green brand, quiet chrome | Docusaurus classic |
 
-`material`, `stellar` and `evergreen` recreate the look of those projects with Nimbly tokens. They copy no code, fonts or brand assets, and they load no external fonts: each uses a system font stack, starting with the original font where the reader already has it installed (for example Roboto on Android).
+`material`, `stellar` and `evergreen` imitate the look of those projects using Nimbly tokens. No code, fonts or brand assets are copied, and no web fonts are downloaded. Each theme lists the original font first in a system font stack, so readers who already have it installed (Roboto on Android, for example) will see it.
 
 :::tip
-This site enables `chooseThemes`, so you can try every theme live from the palette button in the header.
+This site has `chooseThemes` enabled. Use the palette button in the header to try each theme.
 :::
 
 ## Nimbly Classic
 
-Nimbly Classic is the default theme. It is built to be **recognisable at a glance and comfortable to read on any device**. Each choice follows common readability guidance:
+Nimbly Classic is the default theme. It aims to be easy to recognise and comfortable to read on phones and desktops alike. The values follow common readability guidelines:
 
 | Choice | Value | Why |
 | --- | --- | --- |
@@ -43,13 +43,9 @@ Nimbly Classic is the default theme. It is built to be **recognisable at a glanc
 | Fonts | Native stack: SF / Segoe UI Variable / Roboto, then Inter | Nothing to download, so text appears instantly and uses each platform's best-hinted face. |
 | Code | `ui-monospace`, SF Mono, Cascadia Code, JetBrains Mono… | The best monospace font already installed on each OS. |
 
-What makes it recognisable:
+Its visual signature is small: a thin teal-to-amber line at the top of the header and under each page title, and a teal edge on the current page in the sidebar. Section headings have no underline and inline code has no border, which keeps long pages quiet.
 
-- a thin teal-to-amber bar along the top of the header, repeated under each page title;
-- a solid teal edge on the active sidebar page;
-- callouts, tabs and code groups that reuse the same accent.
-
-All ratios are WCAG 2 contrast ratios measured against the page background.
+Contrast values are WCAG 2 ratios against the page background.
 
 ## Use a theme
 
@@ -57,9 +53,9 @@ All ratios are WCAG 2 contrast ratios measured against the page background.
 <nimbly-docs manifest="./index.json" theme="material"></nimbly-docs>
 ```
 
-Or set a default in the manifest with `"theme": "stellar"`. An explicit attribute wins over the reader's saved choice, which wins over the manifest. The selected theme is saved locally under a namespaced key when storage is available. No cookie and no telemetry are used.
+You can also set the default in the manifest with `"theme": "stellar"`. The `theme` attribute takes precedence over the reader's saved choice, and the saved choice over the manifest. The choice is stored in local storage; no cookies are used.
 
-To let readers choose, enable the selector:
+To let readers pick a theme, enable the menu:
 
 ```json
 { "chooseThemes": ["nimbly", "material", "stellar", "evergreen"] }
@@ -67,7 +63,7 @@ To let readers choose, enable the selector:
 
 ## Add a custom theme
 
-A manifest can set tokens from a strict allow-list. Values that look like URLs, expressions, CSS blocks or JavaScript are discarded. A custom theme inherits the palette **and skin** of its `base` (`nimbly` by default):
+The manifest can define themes using the tokens listed below. Values that look like URLs, CSS expressions, CSS blocks or JavaScript are dropped. A custom theme starts from the palette and skin of its `base` theme (`nimbly` if omitted):
 
 ```json
 {
@@ -96,4 +92,4 @@ A manifest can set tokens from a strict allow-list. Values that look like URLs, 
 | Layout | `content-max-width`, `radius`, `shadow` |
 | Chrome | `header-bg`, `header-text`, `header-muted`, `header-border`, `sidebar-bg`, `nav-active-bg`, `nav-active-text` |
 
-Host pages can set the same tokens as CSS custom properties prefixed with `--dv-`, such as `--dv-color-brand` and `--dv-font-body`, on the `nimbly-docs` element.
+A host page can also set these tokens directly on the `nimbly-docs` element as CSS custom properties with a `--dv-` prefix, for example `--dv-color-brand` or `--dv-font-body`.

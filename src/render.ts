@@ -15,6 +15,8 @@ import type { ResolvedManifest, ResolvedPage, RenderedDoc, NimblyPlugin } from "
 export interface RenderContext {
   manifest: ResolvedManifest;
   page: ResolvedPage;
+  /** URL the Markdown was actually fetched from; defaults to `page.url`. */
+  baseUrl?: string;
   debug: boolean;
   copyCode: boolean;
   plugins: NimblyPlugin[];
@@ -62,7 +64,7 @@ export function renderContent(markdown: string, ctx: RenderContext): RenderResul
  *  - Other relative links/images resolve to absolute URLs relative to the doc.
  */
 function rewriteLinksAndAssets(root: ParentNode, ctx: RenderContext): void {
-  const base = ctx.page.url;
+  const base = ctx.baseUrl ?? ctx.page.url;
 
   for (const a of Array.from(root.querySelectorAll("a[href]"))) {
     const href = a.getAttribute("href")!;
@@ -106,8 +108,10 @@ function rewriteLinksAndAssets(root: ParentNode, ctx: RenderContext): void {
 function findPageByUrl(manifest: ResolvedManifest, url: URL): ResolvedPage | null {
   const target = url.origin + url.pathname;
   for (const page of manifest.pages.values()) {
-    const p = new URL(page.url);
-    if (p.origin + p.pathname === target) return page;
+    for (const candidate of page.candidates) {
+      const p = new URL(candidate);
+      if (p.origin + p.pathname === target) return page;
+    }
   }
   return null;
 }

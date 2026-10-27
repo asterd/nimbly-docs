@@ -1,0 +1,203 @@
+{
+  "$schema": "../../manifest.schema.json",
+  "version": "1.0",
+  "title": "Nimbly Docs",
+  "description": "A secure, single-bundle Markdown documentation viewer",
+  "language": "en",
+  "theme": "nimbly",
+  "home": "welcome",
+  "appearance": "auto",
+  "chooseThemes": true,
+  "backLink": {
+    "url": "https://github.com/asterd/nimbly-docs",
+    "label": {
+      "en": "Back to app",
+      "it": "Torna all'app"
+    }
+  },
+  "footer": "Nimbly Docs · zero runtime dependencies · no telemetry",
+  "links": [
+    {
+      "type": "github",
+      "url": "https://github.com/asterd/nimbly-docs"
+    },
+    {
+      "type": "linkedin",
+      "url": "https://www.linkedin.com/in/dario-d-urzo-470b2024",
+      "label": "LinkedIn"
+    },
+    {
+      "type": "external",
+      "url": "https://mermaid.js.org/",
+      "label": "Mermaid project"
+    }
+  ],
+  "apiReference": {
+    "url": "https://petstore.swagger.io/",
+    "label": "API reference"
+  },
+  "languages": [
+    {
+      "code": "en",
+      "label": "English"
+    },
+    {
+      "code": "it",
+      "label": "Italiano"
+    }
+  ],
+  "features": {
+    "search": true,
+    "toc": true,
+    "copyCode": true,
+    "previousNext": true,
+    "breadcrumbs": true,
+    "sidebar": {
+      "collapsible": true,
+      "defaultExpanded": [
+        "getting-started"
+      ]
+    }
+  },
+  "themes": [
+    {
+      "name": "ocean",
+      "base": "nimbus",
+      "light": {
+        "color-bg": "#f5fbff",
+        "color-surface": "#ffffff",
+        "color-text": "#102a43",
+        "color-brand": "#0077b6",
+        "color-brand-strong": "#005f92",
+        "color-border": "#c6e5f5"
+      }
+    }
+  ],
+  "sections": [
+    {
+      "id": "getting-started",
+      "title": {
+        "en": "Getting started",
+        "it": "Per iniziare"
+      },
+      "pages": [
+        {
+          "id": "welcome",
+          "title": {
+            "en": "Welcome",
+            "it": "Benvenuto"
+          },
+          "source": "welcome.md",
+          "description": "What Nimbly Docs is and why it exists."
+        },
+        {
+          "id": "installation",
+          "title": "Installation",
+          "source": "installation.md"
+        },
+        {
+          "id": "configuration",
+          "title": "Configuration",
+          "source": "configuration.md"
+        },
+        {
+          "id": "manifest",
+          "title": "Manifest reference",
+          "source": "manifest.md"
+        },
+        {
+          "id": "scaffold",
+          "title": "Start a new project",
+          "source": "scaffold.md",
+          "badge": "cli"
+        }
+      ]
+    },
+    {
+      "id": "guides",
+      "title": {
+        "en": "Guides",
+        "it": "Guide"
+      },
+      "sections": [
+        {
+          "id": "guides-content",
+          "title": {
+            "en": "Content",
+            "it": "Contenuti"
+          },
+          "pages": [
+            {
+              "id": "markdown",
+              "title": "Markdown features",
+              "source": "markdown.md"
+            },
+            {
+              "id": "components",
+              "title": "Interactive components",
+              "source": "components.md",
+              "badge": "new"
+            },
+            {
+              "id": "security",
+              "title": "Security model",
+              "source": "security.md"
+            }
+          ]
+        },
+        {
+          "id": "guides-customization",
+          "title": {
+            "en": "Customization",
+            "it": "Personalizzazione"
+          },
+          "pages": [
+            {
+              "id": "themes",
+              "title": "Themes",
+              "source": "themes.md",
+              "badge": "new"
+            },
+            {
+              "id": "versions",
+              "title": "Versioned docs",
+              "source": "versions.md",
+              "badge": "new"
+            },
+            {
+              "id": "diagrams",
+              "title": "Diagrams (Mermaid)",
+              "source": "diagrams.md",
+              "badge": "opt-in"
+            },
+            {
+              "id": "pele-test",
+              "title": "Pele engine test",
+              "source": "pele-test.md",
+              "badge": "trial"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reference",
+      "title": {
+        "en": "Reference",
+        "it": "Riferimento"
+      },
+      "pages": [
+        {
+          "id": "api",
+          "title": "Component API",
+          "source": "api.md"
+        },
+        {
+          "id": "technical",
+          "title": "Technical details",
+          "source": "technical.md"
+        }
+      ]
+    }
+  ]
+}

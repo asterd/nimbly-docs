@@ -1,6 +1,6 @@
 # Component API
 
-The public API is intentionally small. Application integrations should use DOM events and explicit methods rather than reach into the Shadow DOM.
+The element exposes a few methods and DOM events. Use these from your application rather than reaching into the Shadow DOM.
 
 ## Methods
 
@@ -16,11 +16,11 @@ await docs.reload();
 
 | Method | Result |
 | --- | --- |
-| `navigate(id, anchor?)` | Updates the hash route |
-| `reload()` | Fetches and revalidates the manifest |
-| `setTheme(name)` | Applies and persists a valid theme; returns its applied name |
-| `setVersion(id)` | Switches to a declared documentation version, keeping the current page when it exists there |
-| `openSearch()` | Opens local full-text search |
+| `navigate(id, anchor?)` | Opens a page, optionally at a heading |
+| `reload()` | Loads and validates the manifest again |
+| `setTheme(name)` | Applies a theme, saves the choice and returns the name applied |
+| `setVersion(id)` | Switches documentation version, staying on the same page if it exists there |
+| `openSearch()` | Opens the search dialog |
 
 ## Events
 
@@ -32,13 +32,13 @@ docs.addEventListener("docs-error", (event) => console.error(event.detail.code))
 
 | Event | Detail |
 | --- | --- |
-| `docs-ready` | `{ title, version }` after manifest validation and shell render |
-| `docs-navigate` | `{ id, url, version }` after a page is rendered; `version` is the active version id, or `null` when unversioned |
-| `docs-error` | `{ code, message, cause? }`; technical causes are for application handling/debug only |
+| `docs-ready` | `{ title, version }`, once the manifest is valid and the layout is shown |
+| `docs-navigate` | `{ id, url, version }`, after a page is rendered. `url` is the Markdown file that was actually loaded. `version` is the active version id, or `null` if the site has no versions |
+| `docs-error` | `{ code, message, cause? }`. `cause` holds technical detail for logging; don't show it to readers |
 
 ## Local extensions
 
-Extensions are application-owned JavaScript registered before the element connects. They are never downloaded or declared in a manifest.
+An extension is JavaScript from your own application, registered before the element is added to the page. Extensions can't be declared in a manifest or downloaded.
 
 ```ts
 import { NimblyDocsElement } from "./nimbly-docs.min.js";
@@ -54,4 +54,4 @@ NimblyDocsElement.use({
 });
 ```
 
-Use this API for narrowly scoped enhancements only. The sanitizer remains the security boundary after `transformHtml` returns.
+Keep extensions small. The output of `transformHtml` still goes through the sanitizer.

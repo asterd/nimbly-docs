@@ -115,7 +115,7 @@ Metodi pubblici opzionali: `navigate(id)`, `reload()`, `setTheme(name)`, `setVer
 
 ### Menu laterale e navigazione
 
-La sidebar e costruita solo dal manifest. Ogni sezione e espandibile, conserva lo stato per la sessione e marca la pagina corrente. Per documentazioni grandi la sidebar deve virtualizzare le sezioni chiuse e non creare nodi per testo Markdown non visualizzato. La ricerca e disponibile con Ctrl/Cmd+K, offre titoli e frammenti, e porta alla pagina selezionata senza full reload.
+La sidebar e costruita solo dal manifest. Ogni sezione e espandibile, conserva lo stato per la sessione e marca la pagina corrente. Le sottosezioni compaiono come piccola didascalia seguita dalle loro pagine, senza prefissi nei titoli. Per documentazioni grandi la sidebar deve virtualizzare le sezioni chiuse e non creare nodi per testo Markdown non visualizzato. La ricerca e disponibile con Ctrl/Cmd+K, offre titoli e frammenti, e porta alla pagina selezionata senza full reload.
 
 La UI include, sempre senza configurazione aggiuntiva: logo/testo, titolo, breadcrumb, precedente/successiva, pulsante copia per codice, link per titolo, pulsante tema e tabella dei contenuti. Tutte le funzioni sono disattivabili nel manifest; nessuna e caricata da CDN.
 
@@ -246,13 +246,15 @@ contenuto Markdown, anche con direttive annidate
 - Direttive supportate: callout `note`, `tip`, `important`, `warning`, `danger` (alias `info`, `success`, `caution`, `error`); `tabs` e `tab`; `code-group`; `steps`; `cards` e `card` (`href` opzionale); `details` (`open` opzionale). I nomi sconosciuti degradano al solo contenuto.
 - Gli alert GitHub (`> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`) producono gli stessi callout.
 - I blocchi di codice accettano un titolo: ```` ```js title="app.js" ```` oppure ```` ```js [app.js] ````.
-- `code-group` trasforma blocchi di codice consecutivi in tab, etichettati dal titolo o dal linguaggio. I gruppi con la stessa chiave `sync` (predefinita `code` per i code group, opzionale per i tab) cambiano insieme e la scelta viene salvata in `localStorage` (`nimbly-docs:tabs:<chiave>`): e lo switch di linguaggio degli esempi.
+- `code-group` trasforma blocchi di codice consecutivi in tab, etichettati dal titolo o dal linguaggio. Tab e code group sono indipendenti per default; i gruppi con la stessa chiave `{sync=chiave}` cambiano insieme e la scelta viene salvata in `localStorage` (`nimbly-docs:tabs:<chiave>`): e lo switch di linguaggio degli esempi.
+- Badge inline: `:badge[testo]` produce un chip (`span.nd-badge`). Il colore dipende dal testo e usa i token del tema: `new`/`stable` → `color-tip`; `beta`/`trial`/`preview`/`experimental`/`alpha` → `color-warning`; `deprecated`/`legacy`/`removed`/`breaking` → `color-danger`; `opt-in`/`optional`/`plugin`/`cli`/`api` → `color-note`; altri testi neutri. Il testo del badge e escluso da id dei titoli e TOC. Gli stessi colori valgono per il `badge` delle pagine in sidebar, allineato a destra.
+- Le task list (`- [x]`) producono checkbox disabilitate: il sanitizer ricostruisce ogni `input` come `type="checkbox" disabled`, conservando solo `checked`.
 
 Sicurezza: il parser emette solo tag gia in allow-list (`div`, `p`, `details`, `summary`, `pre`, `code`) e gli attributi `data-kind`, `data-label`, `data-sync`, `data-title`. Bottoni, ruoli ARIA (pattern WAI-ARIA tabs, con frecce, Home ed End) e icone sono creati dal viewer **dopo** la sanitizzazione, con valori autoriali inseriti solo come testo o valori di attributo. Gli `href` delle card passano dalla stessa validazione URL dei link.
 
 Fuori ambito: playground eseguibili. Se introdotti, dovranno essere un modulo opzionale caricato on demand (come il motore dei diagrammi), eseguito in un `iframe sandbox="allow-scripts"` senza `allow-same-origin`, creato dal viewer e mai dal Markdown.
 
-I link e asset relativi dentro un Markdown si risolvono contro l'URL del Markdown corrente. Le immagini devono avere `loading="lazy"`, `decoding="async"` e testo alternativo; la libreria evidenzia in console immagini prive di alt text in modalita sviluppo.
+I link e asset relativi dentro un Markdown si risolvono contro l'URL da cui il Markdown e stato effettivamente caricato (il primo candidato che ha risposto), non contro il primo candidato della lista. Le immagini devono avere `loading="lazy"`, `decoding="async"` e testo alternativo; la libreria evidenzia in console immagini prive di alt text in modalita sviluppo.
 
 ## 8 Tema e personalizzazione
 

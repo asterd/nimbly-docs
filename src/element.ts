@@ -452,11 +452,11 @@ export class NimblyDocsElement extends HTMLElement {
     const sequence = ++this.navigating;
     this.renderPageLoading();
     try {
-      const markdown = await loader.fetchFirst(page.candidates);
+      const { text: markdown, url: sourceUrl } = await loader.fetchFirst(page.candidates);
       if (sequence !== this.navigating) return;
       const s = this.strings;
       const result = renderContent(markdown, {
-        manifest, page, debug: this.options().debug, copyCode: manifest.features.copyCode, plugins: NimblyDocsElement.plugins,
+        manifest, page, baseUrl: sourceUrl, debug: this.options().debug, copyCode: manifest.features.copyCode, plugins: NimblyDocsElement.plugins,
         labels: { note: s.note, tip: s.tip, important: s.important, warning: s.warning, danger: s.danger },
       });
       shell.content.replaceChildren(result.fragment);
@@ -470,7 +470,7 @@ export class NimblyDocsElement extends HTMLElement {
       this.searchView?.index(page.id, result.doc.text, result.doc.toc.map((h) => h.text));
       document.title = `${page.title} · ${manifest.title}`;
       announce(shell.live, `Loaded ${page.title}`);
-      this.dispatchEvent(new CustomEvent("docs-navigate", { detail: { id: page.id, url: page.url, version: this.activeVersion?.id ?? null }, bubbles: true, composed: true }));
+      this.dispatchEvent(new CustomEvent("docs-navigate", { detail: { id: page.id, url: sourceUrl, version: this.activeVersion?.id ?? null }, bubbles: true, composed: true }));
       this.scrollToAnchor(route.anchor);
       focusMain(shell.main);
     } catch (err) {

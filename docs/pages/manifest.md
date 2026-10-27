@@ -1,10 +1,10 @@
 # Manifest reference
 
-`index.json` is the single source of truth for a Nimbly Docs site: it declares the title, navigation, features, themes, links, languages and where each page's Markdown lives. It is validated at load time and is intentionally declarative — it can describe documentation but never execute code.
+`index.json` describes a Nimbly Docs site: its title, navigation, features, themes, links, languages and where each page's Markdown file is. The viewer validates it on load. It contains data only, never code.
 
-> `manifest.schema.json` is **optional**. It only powers editor autocompletion and CI linting via `$schema`. Runtime validation is built into the viewer and is stricter than JSON Schema.
+`manifest.schema.json` is optional. Reference it from `$schema` to get autocompletion in your editor or to lint the manifest in CI. The viewer does its own, stricter validation at runtime.
 
-## A complete, annotated example
+## Annotated example
 
 ```jsonc
 {
@@ -148,7 +148,7 @@
 | `id` | ✓ | id | Globally unique, `^[a-z0-9][a-z0-9/_-]{0,127}$`. |
 | `title` | ✓ | localizable | Shown in the sidebar. |
 | `pages` |  | array | Page entries. |
-| `sections` |  | array | One nested level of subsections. |
+| `sections` |  | array | One level of subsections. In the sidebar each one appears as a small caption above its pages. |
 | `collapsed` |  | boolean | Start collapsed. |
 
 ### Pages
@@ -160,36 +160,45 @@
 | `source` |  | localizable | Path (or per-locale map). Optional with conventions. |
 | `sources` |  | object | Alternative per-locale `{ locale: path }` map. |
 | `description` |  | localizable | Search/summary text. |
-| `badge` |  | string | Small tag next to the sidebar entry. |
+| `badge` |  | string | Short label shown at the right of the sidebar entry. Coloured by its text (see below). |
 | `hidden` |  | boolean | Routable but not listed. |
+
+### Page badges
+
+A `badge` is a short word such as `new` or `beta`. Its colour depends on the word:
+
+| Words | Colour |
+| --- | --- |
+| `new`, `stable` | Green (tip colour) |
+| `beta`, `trial`, `preview`, `experimental`, `alpha` | Amber (warning colour) |
+| `deprecated`, `legacy`, `removed`, `breaking` | Red (danger colour) |
+| `opt-in`, `optional`, `plugin`, `cli`, `api` | Blue (note colour) |
+| anything else | Neutral |
+
+The colours come from the active theme. The same badges can be used inside a page with `:badge[text]`; see [Interactive components](./components.md#badges).
 
 ### Links
 
-`type` selects the icon: `github`, `linkedin`, `external` (unknown types use a generic icon). `url` must be `https:` without embedded credentials; links open in a new tab with `rel="noopener noreferrer"`.
+`type` selects the icon: `github`, `linkedin` or `external`. Other values get a generic icon. `url` must use `https:` and can't contain credentials. Links open in a new tab with `rel="noopener noreferrer"`.
 
 ## Live palette selector
 
-Set `chooseThemes` to add a palette dropdown in the header for switching themes live:
+Set `chooseThemes` to add a theme menu to the header:
 
 ```jsonc
 "chooseThemes": true                 // all built-in palettes
 "chooseThemes": ["nimbus", "midnight", "sabbia"]   // a curated subset
 ```
 
-Switching a palette only swaps CSS tokens — the current page is **not** re-fetched or re-rendered — so it is instant and cheap. Palette (`theme`) and light/dark **appearance** remain independent: the palette dropdown changes colours, the appearance control changes the light/dark scheme. The reader's palette choice is persisted locally.
+Changing theme only swaps CSS tokens. The page is not fetched or rendered again. Theme and appearance are separate settings: the theme menu changes the colours, the appearance button switches between light and dark. The reader's choice is saved locally.
 
 ## Default appearance
 
-`appearance` sets the initial colour scheme when neither the `appearance` HTML attribute nor a stored user preference is present:
-
-- `light` / `dark` — force a scheme;
-- `auto` — follow the operating system and react to live changes.
-
-The header control always lets the reader override this, and their choice is remembered locally. The `appearance` attribute on `<nimbly-docs>` takes precedence over the manifest value.
+`appearance` sets the starting colour scheme: `light`, `dark`, or `auto` to follow the operating system. It applies only when the element has no `appearance` attribute and the reader hasn't picked a scheme yet. Readers can always change it from the header, and their choice is saved locally.
 
 ## Back to application
 
-When the docs are opened from a host application (for example as a docked page), declare `backLink` to render a clearly labelled button at the start of the header:
+If the docs are opened from another application, `backLink` adds a button at the start of the header that leads back to it:
 
 ```jsonc
 "backLink": {
@@ -198,7 +207,7 @@ When the docs are opened from a host application (for example as a docked page),
 }
 ```
 
-The label is localizable and defaults to a translated "Back to app" when omitted. The link accepts an `http(s)` URL or a same-app relative path. The brand/logo intentionally keeps its role as the documentation home, so the return action is a separate, explicit control.
+The label can be localized. Without one, the button reads "Back to app" in the reader's language. The URL can be absolute (`http(s)`) or a relative path. The logo still links to the documentation home.
 
 ## Localizable values
 
@@ -209,25 +218,25 @@ The label is localizable and defaults to a translated "Back to app" when omitted
 "title": { "en": "Overview", "it": "Panoramica" }
 ```
 
-Resolution order for the active locale: exact locale → base language (e.g. `it` from `it-IT`) → default language → first available value. A missing translation therefore never blanks the UI.
+For the active locale the viewer picks, in order: the exact locale, the base language (`it` for `it-IT`), the default language, then the first value available. A missing translation never leaves a blank label.
 
-## Source resolution (convention over configuration)
+## How page files are found
 
-`source` may be omitted-of-path detail: the viewer tries an ordered list of candidates and uses the first that responds. This keeps manifests short when you follow the standard layout.
+You don't have to write full paths. For each page the viewer tries a list of candidate URLs and uses the first one that answers. Relative links and images in the page are then resolved against that file.
 
-For the **default** language:
+For the default language:
 
 1. the explicit `source` path (resolved against the manifest);
 2. `pages/<filename>`.
 
-For a **non-default** language, the localized folder wins first so it is never shadowed by the default file:
+For other languages, the localized folder is tried first so the default-language file doesn't hide it:
 
 1. `pages/<locale>/<filename>`;
 2. `pages/<base>/<filename>`;
 3. the explicit `source` path;
 4. `pages/<filename>`.
 
-So `"source": "overview.md"` resolves to `pages/overview.md` in the default language and to `pages/it/overview.md` when Italian is active — no per-page `sources` map required.
+So `"source": "overview.md"` loads `pages/overview.md` in the default language and `pages/it/overview.md` when Italian is active. You don't need a `sources` map for each page.
 
 ## Recommended folder structure
 
@@ -249,13 +258,13 @@ docs/
       └─ install.md
 ```
 
-Page `id`s may contain `/` (e.g. `api/orders`); mirroring that in folders keeps sources tidy, but it is a convention, not a requirement.
+Page ids can contain `/`, as in `api/orders`. Matching folders keep things tidy, but they aren't required.
 
 ## Validation and limits
 
-- `version`, `title`, at least one section and one page are mandatory.
-- ids are globally unique and match `^[a-z0-9][a-z0-9/_-]{0,127}$`.
-- Default limits: 500 pages, 256 KB manifest, 2 MB per Markdown page.
-- Sources resolve only as `http(s)`; credentials and token-like query params are rejected.
-- One nested subsection level is supported in v1.
-- Unknown fields are ignored (never treated as behavior), so additive metadata is safe.
+- `version`, `title`, at least one section and one page are required.
+- Ids must be unique across the manifest and match `^[a-z0-9][a-z0-9/_-]{0,127}$`.
+- Default limits: 500 pages, 256 KB for the manifest, 2 MB per Markdown page.
+- Sources must resolve to `http(s)` URLs. URLs with credentials or token-like query parameters are rejected.
+- Sections can nest one level deep.
+- Unknown fields are ignored, so you can add your own metadata.

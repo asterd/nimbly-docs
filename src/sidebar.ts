@@ -1,5 +1,6 @@
 import { SIDEBAR_STATE_PREFIX } from "./constants.js";
 import { chevronIcon } from "./icons.js";
+import { badgeTone } from "./markdown.js";
 import { buildHash } from "./router.js";
 import type { ManifestSection, ResolvedManifest } from "./types.js";
 
@@ -60,9 +61,13 @@ export class Sidebar {
       if (!page.hidden) list.appendChild(this.renderPage(page.id, str(page.title), page.badge, activePageId));
     }
     for (const sub of section.sections || []) {
-      for (const page of sub.pages || []) {
-        if (!page.hidden) list.appendChild(this.renderPage(page.id, `${str(sub.title)}: ${str(page.title)}`, page.badge, activePageId));
-      }
+      const pages = (sub.pages || []).filter((page) => !page.hidden);
+      if (pages.length === 0) continue;
+      const caption = document.createElement("li");
+      caption.className = "nd-page-group";
+      caption.textContent = str(sub.title);
+      list.appendChild(caption);
+      for (const page of pages) list.appendChild(this.renderPage(page.id, str(page.title), page.badge, activePageId));
     }
     group.appendChild(list);
     return group;
@@ -73,12 +78,15 @@ export class Sidebar {
     const a = document.createElement("a");
     a.className = "nd-page-link";
     a.href = buildHash(id);
-    a.textContent = title;
+    const label = document.createElement("span");
+    label.className = "nd-page-title";
+    label.textContent = title;
+    a.appendChild(label);
     if (id === active) a.setAttribute("aria-current", "page");
     a.addEventListener("click", () => this.onNavigate());
     if (badge) {
       const b = document.createElement("span");
-      b.className = "nd-badge";
+      b.className = `nd-badge nd-tone-${badgeTone(badge)}`;
       b.textContent = badge;
       a.appendChild(b);
     }
@@ -111,3 +119,4 @@ function str(value: string | Record<string, string>): string {
 }
 function cssSafe(id: string): string { return id.replace(/[^a-z0-9_-]/gi, "-"); }
 function escapeHtml(v: string): string { return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
