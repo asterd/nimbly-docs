@@ -42,16 +42,17 @@ export class Loader {
 
   /** Fetch Markdown by URL, using the LRU cache and cancelling any prior page fetch. */
   async fetchPage(url: string): Promise<string> {
-    return this.fetchFirst([url]);
+    return (await this.fetchFirst([url])).text;
   }
 
   /**
    * Fetch the first candidate URL that responds successfully, sharing one
    * AbortController across the sequence so a new navigation cancels the whole
    * attempt. Any cached candidate short-circuits the sequence. Only the final
-   * failure is surfaced when every candidate fails.
+   * failure is surfaced when every candidate fails. The URL that answered is
+   * returned too, so relative links and images resolve against the real file.
    */
-  async fetchFirst(candidates: string[]): Promise<string> {
+  async fetchFirst(candidates: string[]): Promise<{ text: string; url: string }> {
     const urls = candidates.filter((u, i) => u && candidates.indexOf(u) === i);
     if (urls.length === 0) throw new LoaderError("page-fetch", "no source URL for page");
 
@@ -67,11 +68,11 @@ export class Loader {
         // Honour the candidate priority order: a cached lower-priority URL must
         // never shadow a higher-priority one (e.g. localized variant first).
         const cached = this.pageCache.get(url);
-        if (cached !== undefined) return cached;
+        if (cached !== undefined) return { text: cached, url };
         try {
           const text = await this.fetchText(url, this.opts.maxPageBytes, "page-fetch", controller);
           this.pageCache.set(url, text);
-          return text;
+          return { text, url };
         } catch (err) {
           // Abort/timeout should stop the whole sequence immediately.
           if (err instanceof LoaderError && (err.code === "network-timeout" || err.code === "offline")) throw err;

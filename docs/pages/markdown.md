@@ -1,6 +1,6 @@
 # Markdown features
 
-Nimbly Docs supports a focused, deterministic Markdown dialect that is appropriate for product and technical documentation.
+Nimbly Docs supports the Markdown you need for technical documentation: GitHub-style tables, task lists, fenced code and alerts. Raw HTML is not supported.
 
 ## Inline formatting
 
@@ -10,10 +10,12 @@ Use **strong text**, *emphasis*, ~~deletions~~, `inline code`, links like [the A
 
 ## Lists and tasks
 
-- Safe links are resolved against the current Markdown file.
-- Links to known Markdown pages become internal routes.
-  - Browser history is preserved.
-  - The source file is not refetched on back/forward when in the LRU cache.
+- Relative links are resolved against the Markdown file they appear in.
+- Links to other pages in the manifest become internal routes.
+  - Back and forward work as usual.
+  - Recently viewed pages come from an in-memory cache and are not downloaded again.
+
+Start an item with `[ ]` or `[x]` to get a task list:
 
 - [x] Manifest validated
 - [x] Search indexed locally
@@ -38,9 +40,9 @@ viewer?.addEventListener("docs-navigate", ({ detail }) => {
 }
 ```
 
-Use the copy control on a code block. It uses the Async Clipboard API with a narrow DOM fallback.
+Each block has a copy button. It uses the Clipboard API, with an older copy method as a fallback for browsers that lack it.
 
-Add a title after the language to show a header bar, with either `title="…"` or `[…]`:
+To show a title bar above a block, add `title="…"` or `[…]` after the language:
 
 ```bash title="Install"
 npm install nimbly-docs
@@ -48,20 +50,20 @@ npm install nimbly-docs
 
 ## Tables
 
-| Markdown construct | Rendered semantic element |
+| Markdown | HTML element |
 | --- | --- |
-| Headings | `h1` through `h6` |
+| Headings | `h1` to `h6` |
 | Lists | `ul`, `ol`, `li` |
 | Code | `pre`, `code` |
 | Tables | `table`, `thead`, `tbody`, `th`, `td` |
 
 ## Blockquotes and callouts
 
-> Blockquotes are useful for quotations and asides. They have no special runtime behavior and cannot execute code.
+> A plain blockquote, for quotations and asides.
 
-For highlighted notes, use a callout directive (`:::tip`) or a GitHub alert (`> [!NOTE]`):
+For notes and warnings, use a callout directive (`:::tip`) or a GitHub alert (`> [!NOTE]`):
 
 > [!TIP]
-> Tabs, code groups, steps and cards are covered in [Interactive components](./components.md).
+> Tabs, code groups, steps, cards and badges are described in [Interactive components](./components.md).
 
-See [Security model](./security.md) for the deliberate exclusions from the Markdown format.
+[Security model](./security.md) lists what the format leaves out and why.

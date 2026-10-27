@@ -1,20 +1,20 @@
 # Technical details
 
-Nimbly Docs is one self-contained ESM bundle with no runtime dependencies. These figures come from the `npm run size` release gate.
+Nimbly Docs is a single ESM bundle with no runtime dependencies. The figures below come from `npm run size`, which also runs as a release check.
 
 ## Bundle size
 
 | Metric | Value |
 | --- | --- |
-| Raw (minified) | ~117 KB |
-| **Gzip** | **~32 KB** |
-| Brotli | ~28 KB |
+| Raw (minified) | ~120 KB |
+| **Gzip** | **~33 KB** |
+| Brotli | ~29 KB |
 | Gzip budget | 120 KB |
-| Headroom | ~88 KB |
+| Headroom | ~87 KB |
 
-The gzip figure includes the Markdown parser, HTML sanitizer, search, UI shell, icons, all themes and the compact syntax highlighter. Optional Mermaid support is **not** counted here: it is imported lazily and only when enabled and used.
+The gzip size covers the Markdown parser, the sanitizer, search, the UI, icons, all themes and the syntax highlighter. The diagram engine is not included: it is loaded separately, and only on pages that contain a diagram when diagrams are enabled.
 
-> The exact size for a given release is printed by `npm run build` / `npm run size` and enforced in CI.
+`npm run build` and `npm run size` print the exact size of each build, and CI fails if it goes over budget.
 
 ## What is inside the bundle
 
@@ -33,7 +33,7 @@ The gzip figure includes the Markdown parser, HTML sanitizer, search, UI shell, 
 
 ## Release artifacts
 
-Each build produces immutable, cacheable files:
+Each build produces files with a content hash in the name, safe to cache forever:
 
 ```text
 dist/nimbly-docs.<version>.<hash>.min.js
@@ -41,21 +41,21 @@ dist/nimbly-docs.<version>.<hash>.min.js.map
 dist/nimbly-docs.<version>.<hash>.min.js.sha384
 ```
 
-Serve the hashed file with `Cache-Control: public, max-age=31536000, immutable` and pin it with Subresource Integrity when cross-origin.
+Serve the hashed file with `Cache-Control: public, max-age=31536000, immutable`. If it comes from another origin, pin it with Subresource Integrity.
 
 ## Runtime characteristics
 
-- No cookies, no telemetry, no implicit remote fonts or CDN calls (Mermaid is the only optional, explicit remote import).
-- In-memory LRU caches the manifest and the last 10 Markdown pages.
-- Search indexes page bodies during idle time; titles/descriptions are searchable immediately.
-- TOC uses `IntersectionObserver`; content is mounted atomically via a `DocumentFragment`.
+- No cookies, no telemetry, no web fonts. The only remote request the viewer can make on its own is the diagram engine, and only when you enable it.
+- The manifest and the last 10 Markdown pages are cached in memory.
+- Page titles and descriptions are searchable right away; page text is indexed when the browser is idle.
+- The table of contents tracks the visible heading with `IntersectionObserver`.
 
 ## Browser targets
 
-Current evergreen Chromium, Firefox and Safari. No automatic polyfills; build a separate explicit legacy profile if older browsers are required.
+Current versions of Chromium, Firefox and Safari. No polyfills are included; if you need older browsers, make a separate build for them.
 
 ## Performance targets
 
-- Shell visible before Markdown fetch completes.
-- Fast navigation cancels the previous page request.
-- No layout shift thanks to a stable shell and skeletons.
+- The header and sidebar appear before the first page has loaded.
+- Navigating again cancels the previous page request.
+- The layout doesn't shift while a page loads, thanks to placeholders.

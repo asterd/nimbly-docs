@@ -83,8 +83,18 @@ function cleanNode(node: Node, opts: SanitizeOptions): Node | null {
   const el = node as Element;
   const tag = el.tagName.toLowerCase();
 
+  // Task-list checkboxes are rebuilt from scratch: always a disabled checkbox,
+  // carrying only its checked state.
+  if (tag === "input") {
+    if (el.getAttribute("type")?.toLowerCase() !== "checkbox") return null;
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.disabled = true;
+    if (el.hasAttribute("checked")) box.setAttribute("checked", "");
+    return box;
+  }
   // Explicitly hostile elements are dropped whole (including their subtree).
-  if (["script", "style", "iframe", "object", "embed", "form", "input", "button", "link", "meta", "svg", "math"].includes(tag)) {
+  if (["script", "style", "iframe", "object", "embed", "form", "button", "link", "meta", "svg", "math"].includes(tag)) {
     return null;
   }
   if (!ALLOWED_TAGS.has(tag)) {

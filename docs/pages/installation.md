@@ -1,20 +1,20 @@
 # Installation
 
-Nimbly Docs is a native custom element. It does not require React, Vue, a server runtime, or a package registry in production.
+Nimbly Docs is a native custom element. In production you don't need React, Vue, a server runtime or a package registry.
 
-## Fastest start
+## Quick start
 
-Scaffold a project skeleton, then drop in the bundle:
+Generate a project skeleton, then add the bundle:
 
 ```bash
 node scripts/create-docs.mjs my-docs --title "My Docs" --lang en
 ```
 
-See **[Start a new project](./scaffold.md)** for all options and the generated layout.
+[Start a new project](./scaffold.md) lists all options and shows the generated layout.
 
-## Minimal integration
+## Minimal setup
 
-Put the built bundle, an `index.json`, and your Markdown files on the same static origin:
+Put the bundle, an `index.json` and your Markdown files on the same static host:
 
 ```html
 <!doctype html>
@@ -22,7 +22,7 @@ Put the built bundle, an `index.json`, and your Markdown files on the same stati
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script type="module" src="/assets/nimbly-docs.0.0.4.<hash>.min.js"></script>
+    <script type="module" src="/assets/nimbly-docs.0.0.7.<hash>.min.js"></script>
   </head>
   <body>
     <nimbly-docs manifest="./index.json"></nimbly-docs>
@@ -30,15 +30,15 @@ Put the built bundle, an `index.json`, and your Markdown files on the same stati
 </html>
 ```
 
-Relative `source` paths in the manifest are resolved against the manifest itself, **not** against the bundle or the host page. See **[Manifest reference](./manifest.md)** for the full structure and the convention-based path resolution.
+Relative `source` paths in the manifest are resolved against the manifest, not against the bundle or the host page. The [Manifest reference](./manifest.md) describes the full structure and how page paths are found.
 
 ### Public CDN
 
-You can also load a versioned bundle straight from GitHub Pages or jsDelivr instead of hosting it yourself:
+If you don't want to host the bundle, load a versioned copy from GitHub Pages:
 
 ```html
 <script type="module"
-  src="https://asterd.github.io/nimbly-docs/cdn/nimbly-docs.0.0.4.min.js"
+  src="https://asterd.github.io/nimbly-docs/cdn/nimbly-docs.0.0.7.min.js"
   crossorigin="anonymous"></script>
 ```
 
@@ -52,17 +52,17 @@ npm run pages
 npm run serve
 ```
 
-Open `http://localhost:8082/docs/`. The `pages` task copies the stable built bundle into this demo directory; release consumers should prefer the immutable filename printed by `npm run build`.
+Then open `http://localhost:8082/docs/`. `npm run pages` copies the built bundle into this demo site. For releases, use the hashed file name printed by `npm run build`.
 
 ## Subresource Integrity
 
-When the viewer is served from another allowed origin, pin the exact bundle and use the generated `.sha384` content:
+If the bundle is served from another origin, pin the exact file and use the hash from the generated `.sha384` file:
 
 ```html
 <script type="module"
-  src="https://assets.example.com/nimbly-docs.0.0.4.<hash>.min.js"
+  src="https://assets.example.com/nimbly-docs.0.0.7.<hash>.min.js"
   integrity="sha384-…"
   crossorigin="anonymous"></script>
 ```
 
-For deployment cache headers and CSP, see [Security model](./security.md).
+Cache headers and CSP are covered in [Security model](./security.md).

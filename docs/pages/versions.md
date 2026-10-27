@@ -1,14 +1,14 @@
 # Versioned docs
 
-Software ships in versions, and so should its documentation. Nimbly Docs can serve several documentation versions side by side. Readers switch between them from the header, and pages of older or upcoming versions show a clear banner.
+Nimbly Docs can publish the documentation of several releases side by side. Readers switch version from the header, and pages of old or unreleased versions show a banner.
 
 :::tip Try it
-Open the version selector next to the logo and pick **v0.0.5**. That is the real documentation of the previous release, frozen with the snapshot command described below.
+Open the version menu next to the logo and pick **v0.0.5**. It contains the docs of the previous release, saved with the snapshot command described below.
 :::
 
 ## How it works
 
-Each version is a complete, independent documentation tree with its own manifest, pages, languages and theme. The **root manifest**, the one in the element's `manifest` attribute, lists the versions:
+Each version is a separate documentation tree with its own manifest, pages, languages and theme. The root manifest, the one set in the element's `manifest` attribute, lists all versions:
 
 ```json title="index.json"
 {
@@ -27,11 +27,11 @@ Each version is a complete, independent documentation tree with its own manifest
 | `manifest` | | The version's manifest, relative to the root manifest. Exactly one entry must omit it: the version the root manifest describes itself. |
 | `status` | | `current` (default), `legacy` or `unreleased`. It controls the selector tag and the banner. |
 
-Version manifests are plain v1 manifests. Any `versions` list inside them is ignored: the root is the single source of truth.
+A version manifest is an ordinary v1 manifest. If it contains a `versions` list, it is ignored; only the root manifest's list counts.
 
 ## Routes
 
-The default version keeps the usual routes. Other versions add an `@id` segment, so every page of every version has its own deep link:
+Pages of the default version keep the usual routes. Other versions add an `@id` segment, so every page of every version has its own link:
 
 ```text
 #/installation              → default version
@@ -39,17 +39,19 @@ The default version keeps the usual routes. Other versions add an `@id` segment,
 #/@1.x/installation#cdn     → version 1.x, "cdn" heading
 ```
 
-When a reader switches version, Nimbly Docs keeps the current page if it exists in the target version. Otherwise it opens that version's home page. An unknown version id falls back to the default version.
+When the reader switches version, the viewer stays on the same page if it exists in that version, and opens the version's home page otherwise. An unknown version id falls back to the default version.
 
 ## What readers see
 
-- **Version selector.** A compact control next to the brand, shown when at least two versions are declared. Non-current versions are tagged `legacy` or `unreleased`.
-- **Banner.** Pages of a `legacy` version say the docs are no longer maintained. Pages of an `unreleased` version say the docs are not released yet. Both link to the same page in the default version. The banner text is localized.
-- **Per-version everything.** Search, sidebar, languages and the manifest's default theme all follow the active version.
+A version menu appears next to the logo when the manifest declares at least two versions. Versions that aren't current are tagged `legacy` or `unreleased` in the menu.
+
+Pages of a `legacy` version show a banner saying the docs are no longer maintained; pages of an `unreleased` version say the docs describe a version that isn't out yet. Both banners link to the same page in the default version, and their text follows the reader's language.
+
+Search, the sidebar, languages and the default theme all come from the active version's manifest.
 
 ## Freeze a release
 
-The snapshot command copies the current docs into `versions/<id>/` and registers the copy in the root manifest:
+The snapshot command copies the current docs to `versions/<id>/` and adds the copy to the root manifest:
 
 ```bash
 npx nimbly-docs-version 1.x --docs docs --label "v1.x"
@@ -57,10 +59,10 @@ npx nimbly-docs-version 1.x --docs docs --label "v1.x"
 npm run version:snapshot -- 1.x --docs docs
 ```
 
-It copies `index.json`, `pages/` and image assets (never the viewer bundle) into `docs/versions/1.x/`. The root manifest then gets a `legacy` entry, plus a `current` entry for itself if it has none. Use `--status`, `--current` and `--current-label` to control the generated entries.
+It copies `index.json`, `pages/` and image assets, but not the viewer bundle, into `docs/versions/1.x/`. The root manifest gets a `legacy` entry for the copy, and a `current` entry for itself if it doesn't have one yet. `--status`, `--current` and `--current-label` change the generated entries.
 
 :::note
-The command rewrites the root `index.json` with standard two-space formatting. Review the diff before committing.
+The command rewrites the root `index.json` with two-space indentation. Check the diff before you commit.
 :::
 
 ## Element API

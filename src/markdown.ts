@@ -332,7 +332,7 @@ function renderDirective(
       panels.push(`<div class="nd-tab-panel" data-label="${escapeAttr(label)}">${block.html}</div>`);
       i += block.consumed;
     }
-    return { html: `<div class="nd-tabs nd-code-group"${syncAttr("code")}>${panels.join("")}</div>`, text: texts.join(" ") };
+    return { html: `<div class="nd-tabs nd-code-group"${syncAttr("")}>${panels.join("")}</div>`, text: texts.join(" ") };
   }
 
   const inner = renderMarkdown(body.join("\n"), options);
@@ -474,7 +474,9 @@ function parseList(
     // Task list checkbox
     const task = /^\[( |x|X)\]\s+(.*)$/s.exec(itemText);
     let checkbox = "";
+    let liOpen = "<li>";
     if (task) {
+      liOpen = '<li class="nd-task">';
       const checked = task[1]!.toLowerCase() === "x";
       checkbox = `<input type="checkbox" disabled${checked ? " checked" : ""}> `;
       itemText = task[2]!;
@@ -484,16 +486,26 @@ function parseList(
     if (/\n/.test(itemText) && /^\s*(?:[-*+]|\d+[.)])\s+|^\s*```/.test(itemText.split("\n").slice(1).join("\n"))) {
       const rendered = renderMarkdown(itemText, options);
       texts.push(rendered.text);
-      items.push(`<li>${checkbox}${rendered.html}</li>`);
+      items.push(`${liOpen}${checkbox}${rendered.html}</li>`);
     } else {
       texts.push(stripInline(itemText));
-      items.push(`<li>${checkbox}${renderInline(itemText)}</li>`);
+      items.push(`${liOpen}${checkbox}${renderInline(itemText)}</li>`);
     }
   }
 
   const tag = ordered ? "ol" : "ul";
   const cls = /\[( |x|X)\]/.test(lines[start]!) ? ' class="nd-tasklist"' : "";
   return { listHtml: `<${tag}${cls}>${items.join("")}</${tag}>`, consumed: i - start, text: texts.join(" ") };
+}
+
+/** Pick a colour tone for a badge from its text. Unknown words stay neutral. */
+export function badgeTone(badge: string): string {
+  const word = badge.trim().toLowerCase();
+  if (/^(new|nuovo|stable|ga)$/.test(word)) return "new";
+  if (/^(beta|trial|preview|experimental|alpha|wip)$/.test(word)) return "trial";
+  if (/^(deprecated|legacy|removed|breaking)$/.test(word)) return "deprecated";
+  if (/^(opt-in|optional|plugin|cli|api|pro)$/.test(word)) return "info";
+  return "neutral";
 }
 
 /** Render inline Markdown (bold, italic, code, links, images) to safe HTML. */
@@ -513,6 +525,9 @@ export function renderInline(text: string): string {
     const t = title ? ` title="${escapeAttr(title)}"` : "";
     return `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${t}>`;
   });
+
+  // Badges: :badge[trial] → a small chip, coloured by its text.
+  s = s.replace(/:badge\[([^\]\n]{1,24})\]/g, (_m, label) => `<span class="nd-badge nd-tone-${badgeTone(label)}">${label.trim()}</span>`);
 
   // Links: [text](href "title")
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+&quot;([^&]*)&quot;)?\)/g, (_m, label, href, title) => {
@@ -542,6 +557,7 @@ export function renderInline(text: string): string {
 /** Strip inline Markdown/HTML for plain-text extraction (search, TOC). */
 export function stripInline(text: string): string {
   return text
+    .replace(/:badge\[[^\]\n]{1,24}\]/g, "")
     .replace(/`+([^`]*)`+/g, "$1")
     .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")

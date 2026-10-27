@@ -1,41 +1,53 @@
-# Diagrams (Mermaid)
+# Diagrams
 
-Nimbly Docs renders [Mermaid](https://mermaid.js.org/) diagrams from fenced ` ```mermaid ` blocks. Support is **opt-in** so the base bundle stays dependency-free and inside its size budget.
+Write diagrams in [Mermaid syntax](https://mermaid.js.org/syntax/flowchart.html) inside a ` ```mermaid ` code block. Nimbly Docs renders them to SVG with [Pele](https://github.com/obsidianmd/pele), a small renderer for the Mermaid language. Mermaid.js itself is not loaded.
 
-## Enabling it
+## Enable diagrams
 
-Add the `mermaid` attribute. Mermaid is then imported lazily from a pinned URL, and only on pages that actually contain a diagram.
+Diagrams are off by default, so the base bundle stays small and has no dependencies. Turn them on with the `mermaid` attribute:
 
 ```html
 <nimbly-docs manifest="./index.json" mermaid="on"></nimbly-docs>
 ```
 
-Under a strict Content-Security-Policy, self-host the library and point to it:
+Pele is imported from a pinned CDN URL, and only on pages that contain a diagram. If your Content-Security-Policy does not allow that CDN, host the file yourself and point to it:
 
 ```html
 <nimbly-docs
   manifest="./index.json"
   mermaid="on"
-  mermaid-src="/vendor/mermaid.esm.min.mjs">
+  mermaid-src="/vendor/pele.js">
 </nimbly-docs>
 ```
 
-Diagrams are parsed with Mermaid's `strict` security level, so diagram text cannot execute scripts or inject raw HTML. Diagrams also follow the active light/dark appearance.
+Diagram text is treated as data: it cannot run scripts or inject HTML. Colours come from the active theme's CSS variables, so diagrams follow light/dark mode and theme changes without being re-rendered.
+
+If a block fails to parse, it stays on the page as a normal code block.
 
 ## Flowchart
 
 ```mermaid
 flowchart TD
     A[Browser loads bundle] --> B{Manifest valid?}
-    B -- No --> E[Accessible error + retry]
+    B -- No --> E[Show error and retry button]
     B -- Yes --> C[Render shell]
     C --> D[Resolve hash route]
     D --> F[Fetch Markdown]
     F --> G[Parse and sanitize]
-    G --> H[Mount atomically]
-    H --> I{Contains mermaid?}
-    I -- Yes --> J[Lazy-load Mermaid and render SVG]
+    G --> H[Mount page]
+    H --> I{Contains a diagram?}
+    I -- Yes --> J[Load Pele and render SVG]
     I -- No --> K[Done]
+```
+
+You can style nodes and edges with `style`, `classDef` and `linkStyle`:
+
+```mermaid
+flowchart LR
+  A[Draft] --> B[Review]:::warn --> C[Done]
+  style C fill:#879a39,stroke:#66800b,color:#fffcf0
+  classDef warn fill:#d0a215,stroke:#ad8301
+  linkStyle 0 stroke:#878580,stroke-dasharray:4 4
 ```
 
 ## Sequence diagram
@@ -45,10 +57,10 @@ sequenceDiagram
     participant U as User
     participant V as nimbly-docs
     participant S as Static host
-    U->>V: Open #/api/orders
-    V->>S: GET orders.md (AbortController)
+    U->>V: Open #/api
+    V->>S: GET api.md
     S-->>V: 200 Markdown
-    V->>V: Parse → sanitize → mount
+    V->>V: Parse, sanitize, mount
     V-->>U: docs-navigate { id, url }
 ```
 
@@ -59,21 +71,19 @@ classDiagram
     class NimblyDocsElement {
       +navigate(id, anchor?)
       +setTheme(name)
-      +setAppearance(value)
+      +setVersion(id)
       +openSearch()
       +reload()
     }
     class ThemeManager {
       +setTheme()
       +setAppearance()
-      +cycleAppearance()
     }
-    class SearchController {
-      +open()
-      +index()
+    class Loader {
+      +fetchFirst(candidates)
     }
     NimblyDocsElement --> ThemeManager
-    NimblyDocsElement --> SearchController
+    NimblyDocsElement --> Loader
 ```
 
 ## State diagram
@@ -89,4 +99,58 @@ stateDiagram-v2
     Error --> Loading: retry
 ```
 
-If a diagram fails to parse, the original code block is preserved so the page is never left blank.
+## More diagram types :badge[trial]
+
+Pele also handles the types below. Support for them is newer and less tested, so check the output before you rely on them, and report anything that renders wrong.
+
+### Entity relationship
+
+```mermaid
+erDiagram
+    MANIFEST ||--o{ SECTION : contains
+    SECTION ||--o{ PAGE : contains
+    PAGE ||--o{ HEADING : has
+    MANIFEST {
+      string title
+      string home
+    }
+    PAGE {
+      string id
+      string source
+    }
+```
+
+### Pie chart
+
+```mermaid
+pie title Bundle composition
+    "Markdown parser" : 32
+    "Sanitizer" : 18
+    "Search" : 15
+    "UI shell + icons" : 20
+    "Themes + highlighter" : 15
+```
+
+### Gantt
+
+```mermaid
+gantt
+    title Release plan
+    dateFormat  YYYY-MM-DD
+    section Build
+    Engine swap        :done,    s1, 2026-10-26, 1d
+    Theme variables    :active,  s2, 2026-10-27, 1d
+    section Review
+    Compatibility check :        r1, after s2, 2d
+    Release            :milestone, after r1, 0d
+```
+
+## Invalid syntax
+
+This block is broken on purpose. It stays visible as code instead of blanking the page:
+
+```mermaid
+flowchart TD
+    A -->
+    this is not valid --> ???
+```

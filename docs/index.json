@@ -5,15 +5,16 @@
   "description": "A secure, single-bundle Markdown documentation viewer",
   "language": "en",
   "theme": "nimbly",
+  "logo": "./assets/nimbly-logo.svg",
   "home": "welcome",
-  "appearance": "auto",
+  "appearance": "light",
   "chooseThemes": true,
   "backLink": { "url": "https://github.com/asterd/nimbly-docs", "label": { "en": "Back to app", "it": "Torna all'app" } },
   "footer": "Nimbly Docs · zero runtime dependencies · no telemetry",
   "links": [
     { "type": "github", "url": "https://github.com/asterd/nimbly-docs" },
     { "type": "linkedin", "url": "https://www.linkedin.com/in/dario-d-urzo-470b2024", "label": "LinkedIn" },
-    { "type": "external", "url": "https://mermaid.js.org/", "label": "Mermaid project" }
+    { "type": "external", "url": "https://github.com/obsidianmd/pele", "label": "Pele diagrams" }
   ],
   "apiReference": { "url": "https://petstore.swagger.io/", "label": "API reference" },
   "languages": [
@@ -21,7 +22,8 @@
     { "code": "it", "label": "Italiano" }
   ],
   "versions": [
-    { "id": "0.0.6", "label": "v0.0.6 (latest)", "status": "current" },
+    { "id": "0.0.7", "label": "v0.0.7 (latest)", "status": "current" },
+    { "id": "0.0.6", "label": "v0.0.6", "manifest": "./versions/0.0.6/index.json", "status": "legacy" },
     { "id": "0.0.5", "label": "v0.0.5", "manifest": "./versions/0.0.5/index.json", "status": "legacy" }
   ],
   "features": {
@@ -77,8 +79,7 @@
           "pages": [
             { "id": "themes", "title": "Themes", "source": "themes.md", "badge": "new" },
             { "id": "versions", "title": "Versioned docs", "source": "versions.md", "badge": "new" },
-            { "id": "diagrams", "title": "Diagrams (Mermaid)", "source": "diagrams.md", "badge": "opt-in" },
-            { "id": "pele-test", "title": "Pele engine test", "source": "pele-test.md", "badge": "trial" }
+            { "id": "diagrams", "title": "Diagrams", "source": "diagrams.md", "badge": "opt-in" }
           ]
         }
       ]

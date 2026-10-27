@@ -1,6 +1,6 @@
 # Security model
 
-Nimbly Docs treats documentation as untrusted data. The viewer is intentionally useful without treating Markdown or manifest values as executable configuration.
+Nimbly Docs treats Markdown and the manifest as untrusted input. Neither can run code in the page.
 
 ## Rendering pipeline
 
@@ -8,28 +8,28 @@ Nimbly Docs treats documentation as untrusted data. The viewer is intentionally 
 Markdown → raw HTML disabled parser → allow-list sanitizer → DOM fragment → atomic render
 ```
 
-The parser escapes raw HTML. The sanitizer independently removes unsafe elements and attributes before mounting the fragment.
+The parser escapes raw HTML. The sanitizer then checks the output again and removes any element or attribute not on its allow-list before the page is shown.
 
-## Explicit protections
+## Protections
 
-- `script`, `style`, `iframe`, `object`, `embed`, forms, inline SVG, event-handler attributes, and inline styles are removed.
-- `javascript:`, `data:`, `vbscript:`, `file:`, and `blob:` resource URLs are rejected.
-- Images are lazy-loaded, decoded asynchronously, and accept only relative or HTTPS URLs by default.
-- Code blocks are text, never executable code.
-- The manifest does not load plugins, CSS, scripts, fonts, or arbitrary HTML.
-- Source URLs cannot contain embedded credentials or token-like authentication query parameters.
-- Content is prepared in a `DocumentFragment` and replaced atomically.
+- `script`, `style`, `iframe`, `object`, `embed`, forms, inline SVG, event-handler attributes and inline styles are removed. The only form control kept is the disabled checkbox of a task list, which is rebuilt from scratch.
+- `javascript:`, `data:`, `vbscript:`, `file:` and `blob:` URLs are rejected.
+- Images load lazily and accept only relative or HTTPS URLs by default.
+- Code blocks are shown as text and never run.
+- The manifest can't load plugins, CSS, scripts, fonts or HTML.
+- Source URLs can't contain credentials or token-like query parameters.
+- Each page is built in a `DocumentFragment` and swapped in at once.
 
 ## Deployment posture
 
-Prefer same-origin hosting. An OpenShift route, Nginx location, Apache vhost, CDN bucket, or GitHub Pages site is sufficient.
+Serve the docs from the same origin as your app when you can. Any static host works: an Nginx location, an Apache vhost, an OpenShift route, a CDN bucket or GitHub Pages.
 
 ```text
 Cache-Control: public, max-age=31536000, immutable    # hashed JS bundle
 Cache-Control: max-age=300, must-revalidate           # manifest and Markdown
 ```
 
-Start from a restrictive CSP and only add actual required origins:
+Start with a strict Content Security Policy and add only the origins you actually need:
 
 ```text
  default-src 'self'; script-src 'self'; style-src 'self';
@@ -39,4 +39,4 @@ Start from a restrictive CSP and only add actual required origins:
 
 ## Trust boundary
 
-Authentication belongs to your application and reverse proxy, not the manifest. Do not put access tokens in `source` query strings. If you must use a cross-origin manifest, configure an explicit CORS allow-list on that origin and pin the viewer with SRI.
+Authentication is handled by your application or reverse proxy, not by the manifest. Don't put access tokens in `source` query strings. If the manifest must come from another origin, allow your site explicitly in that origin's CORS settings and pin the viewer with SRI.

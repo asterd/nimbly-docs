@@ -1,30 +1,33 @@
-# Documentazione vicina alla tua applicazione
+# Nimbly Docs
 
-**Nimbly Docs** è un Web Component integrabile per documentazione Markdown locale. Offre l'esperienza tipica di Docsify—navigazione annidata, ricerca, temi, indice di pagina e deep link—senza framework, plugin remoti o dipendenze a runtime.
+Nimbly Docs è un Web Component che mostra documentazione Markdown a partire da un manifest JSON. Offre sidebar, ricerca, temi, indice di pagina e link diretti, come Docsify, ma senza framework, senza plugin da scaricare e senza dipendenze a runtime.
 
-> Questa pagina è la variante in italiano: cambia lingua dal selettore nell'header per tornare all'inglese.
+Stai leggendo la versione italiana di questa pagina. Per tornare all'inglese usa il selettore della lingua nell'header.
 
-:::tip Novità della 0.0.6
-Nuovo tema predefinito **Nimbly Classic**, temi ispirati a Material, Starlight e Docusaurus, componenti interattivi (tab, code group, callout, step, card) e documentazione multi-versione. Prova il selettore di versione accanto al logo.
+:::tip Novità della 0.0.7
+I code group sono indipendenti, a meno che non condividano una chiave `{sync=...}`. I chip hanno un colore legato al tema e si possono usare anche nel testo con `:badge[...]`. Le task list mostrano le checkbox, Mermaid e Pele sono in un'unica pagina sui diagrammi e le immagini relative si caricano correttamente.
 :::
 
-## Perché esiste
+## Come funziona
 
-La documentazione viene spesso distribuita insieme a un'applicazione, ma gli stack moderni possono rendere un piccolo manuale locale dipendente da un framework pesante o da richieste di rete a terzi. Nimbly Docs mantiene il modello operativo volutamente semplice:
+Insieme alla tua applicazione distribuisci tre cose:
 
-1. Distribuisci un singolo file ESM cacheabile.
-2. Tieni `index.json` e i Markdown accanto all'applicazione.
-3. Servili dalla stessa origine.
-4. Naviga con gli hash—nessuna riscrittura server necessaria.
+1. il viewer, un unico file ESM;
+2. il manifest `index.json`, che descrive la navigazione;
+3. le pagine Markdown.
 
-## Cosa ottieni
+Pubblicale sulla stessa origine e aggiungi `<nimbly-docs manifest="./index.json">` a una pagina. La navigazione usa l'hash dell'URL, quindi non servono regole di rewrite sul server.
+
+## Funzionalità
 
 | Funzione | Inclusa |
 | --- | :---: |
 | Sidebar annidata | ✓ |
-| Routing hash | ✓ |
+| Routing con hash | ✓ |
 | Ricerca locale | ✓ |
 | Temi chiaro/scuro | ✓ |
-| Diagrammi Mermaid | ✓ (opt-in) |
+| Componenti interattivi | ✓ |
+| Documentazione per versione | ✓ |
+| Diagrammi | ✓ (da attivare) |
 
-Le pagine tradotte sono file Markdown separati, dichiarati in `sources` per ciascuna lingua; se una traduzione manca, il viewer usa la lingua di default.
+Le traduzioni sono file Markdown separati, uno per lingua. Se una traduzione manca, il viewer mostra la pagina nella lingua predefinita.

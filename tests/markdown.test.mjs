@@ -26,7 +26,7 @@ test("nested tabs close by depth, not colon count", () => {
 test("code-group builds one panel per fence, labelled by title or language", () => {
   const src = ':::code-group\n```js title="app.js"\nconst a = 1;\n```\n```python\nprint(1)\n```\n:::';
   const { html } = renderMarkdown(src);
-  assert.match(html, /<div class="nd-tabs nd-code-group" data-sync="code">/);
+  assert.match(html, /<div class="nd-tabs nd-code-group">/);
   assert.match(html, /data-label="app.js"/);
   assert.match(html, /data-label="Python"/);
   assert.match(html, /<code data-lang="javascript" data-title="app.js">/);
@@ -59,4 +59,16 @@ test("heading ids stay unique across nested content", () => {
   const { html } = renderMarkdown("## Setup\n:::tip\n## Setup\n:::");
   assert.match(html, /id="setup"/);
   assert.match(html, /id="setup-2"/);
+});
+
+test("inline badges render as toned chips and stay out of heading ids", () => {
+  const { html, toc } = renderMarkdown("## More types :badge[trial]");
+  assert.match(html, /<h2 id="more-types">/);
+  assert.match(html, /<span class="nd-badge nd-tone-trial">trial<\/span>/);
+  assert.equal(toc[0].text, "More types");
+});
+
+test("task list items keep a checkbox marker", () => {
+  const { html } = renderMarkdown("- [x] done\n- [ ] todo");
+  assert.match(html, /<li class="nd-task"><input type="checkbox" disabled checked> done<\/li>/);
 });
