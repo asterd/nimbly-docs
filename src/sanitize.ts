@@ -40,7 +40,10 @@ const TAG_ATTRS: Record<string, Set<string>> = {
   th: new Set(["scope", "colspan", "rowspan", "align"]),
   td: new Set(["colspan", "rowspan", "align"]),
   ol: new Set(["start", "type"]),
-  code: new Set(["data-lang"]),
+  code: new Set(["data-lang", "data-title"]),
+  // Directive hints (callout kind, tab label, tab sync group). Plain data only:
+  // behaviour is attached later by trusted code in components.ts.
+  div: new Set(["data-kind", "data-label", "data-sync"]),
   span: new Set([]),
   details: new Set(["open"]),
 };

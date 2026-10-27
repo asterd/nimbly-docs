@@ -9,6 +9,7 @@ const docs = document.querySelector<NimblyDocsElement>("nimbly-docs")!;
 
 docs.navigate("security", "deployment-posture");
 docs.setTheme("midnight");
+docs.setVersion("0.0.5");
 docs.openSearch();
 await docs.reload();
 ```
@@ -18,6 +19,7 @@ await docs.reload();
 | `navigate(id, anchor?)` | Updates the hash route |
 | `reload()` | Fetches and revalidates the manifest |
 | `setTheme(name)` | Applies and persists a valid theme; returns its applied name |
+| `setVersion(id)` | Switches to a declared documentation version, keeping the current page when it exists there |
 | `openSearch()` | Opens local full-text search |
 
 ## Events
@@ -31,7 +33,7 @@ docs.addEventListener("docs-error", (event) => console.error(event.detail.code))
 | Event | Detail |
 | --- | --- |
 | `docs-ready` | `{ title, version }` after manifest validation and shell render |
-| `docs-navigate` | `{ id, url }` after a page is rendered |
+| `docs-navigate` | `{ id, url, version }` after a page is rendered; `version` is the active version id, or `null` when unversioned |
 | `docs-error` | `{ code, message, cause? }`; technical causes are for application handling/debug only |
 
 ## Local extensions

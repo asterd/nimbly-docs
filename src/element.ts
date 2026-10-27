@@ -1,19 +1,20 @@
 import styles from "./styles.css";
-import { DEFAULT_BRAND_TITLE, DEFAULT_MERMAID_SRC, DEFAULT_TIMEOUT, LIMITS, VERSION } from "./constants.js";
+import { DEFAULT_BRAND_TITLE, DEFAULT_MERMAID_SRC, DEFAULT_THEME, DEFAULT_TIMEOUT, LIMITS, VERSION } from "./constants.js";
 import { announce, focusMain } from "./a11y.js";
 import { autoIcon, moonIcon, sunIcon } from "./icons.js";
 import { hasMermaid, renderMermaid } from "./mermaid.js";
 import { Loader, LoaderError } from "./loader.js";
 import { ManifestError, normalizeManifest } from "./manifest.js";
 import { handleCopyClick, renderContent } from "./render.js";
-import { Router, type Route } from "./router.js";
+import { handleTabClick, handleTabKeydown } from "./components.js";
+import { buildHash, Router, setRouteVersion, type Route } from "./router.js";
 import { SearchController } from "./search.js";
-import { applyBrand, createShell, renderLanguageMenu, renderLanguageSelector, renderThemeMenu, renderThemeSelector, type BrandConfig, type ShellRefs } from "./shell.js";
+import { applyBrand, createShell, renderLanguageMenu, renderLanguageSelector, renderThemeMenu, renderThemeSelector, renderVersionMenu, renderVersionSelector, themeLabel, type BrandConfig, type ShellRefs } from "./shell.js";
 import { Sidebar } from "./sidebar.js";
 import { ThemeManager, type Appearance, type ThemeState } from "./theme.js";
 import { Toc } from "./toc.js";
 import { persistedLocale, persistLocale, stringsFor, type UIStrings } from "./i18n.js";
-import type { DocsError, NimblyPlugin, ResolvedManifest, ResolvedPage, ViewerOptions } from "./types.js";
+import type { DocsError, NimblyPlugin, ResolvedManifest, ResolvedPage, ResolvedVersion, ViewerOptions } from "./types.js";
 
 const DEFAULTS: ViewerOptions = {
   manifest: "./index.json", theme: "auto", locale: "", router: "hash", search: true,
@@ -55,7 +56,15 @@ export class NimblyDocsElement extends HTMLElement {
   private locale = "";
   private strings: UIStrings = stringsFor("en");
   private rawManifest: unknown = null;
+  private rootManifest: unknown = null;
   private manifestUrl = "";
+  /** Versions declared by the root manifest; version manifests never redefine them. */
+  private versions: ResolvedVersion[] = [];
+  private activeVersion: ResolvedVersion | null = null;
+  /** Set when a version switch keeps the current page id, which may not exist there. */
+  private versionFallback = false;
+  private currentPageId: string | null = null;
+  private keydownBound = false;
 
   connectedCallback(): void {
     this.syncPageMode();
@@ -72,7 +81,7 @@ export class NimblyDocsElement extends HTMLElement {
 
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     if (!this.initialized || oldValue === newValue) return;
-    if (name === "theme") this.setTheme(newValue || "nimbus");
+    if (name === "theme") this.setTheme(newValue || DEFAULT_THEME);
     else if (name === "appearance") this.setAppearance(newValue || "auto");
     else if (name === "title" || name === "logo") this.refreshBrand();
     else if (name === "manifest") void this.reload();
@@ -94,7 +103,7 @@ export class NimblyDocsElement extends HTMLElement {
   /** Select a colour palette. Returns the applied palette name. */
   setTheme(name: string): string {
     const state = this.themes?.setTheme(name);
-    return state?.theme ?? "nimbus";
+    return state?.theme ?? DEFAULT_THEME;
   }
 
   /** Select light, dark or auto appearance. Returns the applied appearance. */
@@ -103,12 +112,20 @@ export class NimblyDocsElement extends HTMLElement {
     return state?.appearance ?? "auto";
   }
 
+  /** Switch to a documentation version by id, keeping the current page when it exists there. */
+  setVersion(id: string): void {
+    const target = this.versions.find((v) => v.id === id);
+    if (!target || target === this.activeVersion) return;
+    this.versionFallback = true;
+    this.router.go(this.currentPageId ?? "", null, false, target.isDefault ? null : target.id);
+  }
+
   /** Open the full client-side search dialog. */
   openSearch(): void { this.searchView?.open(); }
 
   /** Cycle to the next available colour palette (built-ins then manifest themes). */
   cyclePalette(): string {
-    if (!this.themes) return "nimbus";
+    if (!this.themes) return DEFAULT_THEME;
     const all = this.themes.themes();
     const at = all.indexOf(this.themes.get().theme);
     const next = all[(at + 1) % all.length]!;
@@ -201,9 +218,13 @@ export class NimblyDocsElement extends HTMLElement {
     try {
       const raw = await this.loader.fetchManifest(manifestUrl);
       this.rawManifest = raw;
+      this.rootManifest = raw;
       this.manifestUrl = manifestUrl;
       // First pass with no locale to discover declared languages.
       this.manifest = normalizeManifest(raw, manifestUrl);
+      this.versions = this.manifest.versions;
+      this.activeVersion = this.versions.find((v) => v.isDefault) ?? null;
+      setRouteVersion(null);
       this.initialized = true;
       this.locale = this.resolveLocale(opts);
       // Re-resolve titles for the active locale when the docs are multilingual.
@@ -261,13 +282,26 @@ export class NimblyDocsElement extends HTMLElement {
       ? new SearchController(this.manifest, shell.app, (id) => this.navigate(id))
       : null;
 
-    shell.brand.href = `#/${encodeURI(this.manifest.homeId)}`;
+    shell.brand.href = buildHash(this.manifest.homeId);
     shell.menuButton.addEventListener("click", () => this.toggleDrawer());
     shell.scrim.addEventListener("click", () => this.closeDrawer());
     shell.appearanceButton.addEventListener("click", () => this.themes?.cycleAppearance());
     shell.searchButton.addEventListener("click", () => this.openSearch());
-    shell.app.addEventListener("click", (event) => { void handleCopyClick(event.target); });
-    this.root.addEventListener("keydown", (event) => this.onGlobalKeydown(event as KeyboardEvent));
+    shell.app.addEventListener("click", (event) => {
+      if (!handleTabClick(event.target, shell.content)) void handleCopyClick(event.target);
+    });
+    // The shadow root outlives shell re-mounts (locale/version switches): bind once.
+    if (!this.keydownBound) {
+      this.root.addEventListener("keydown", (event) => this.onGlobalKeydown(event as KeyboardEvent));
+      this.keydownBound = true;
+    }
+
+    // Version selector, only when the root manifest declares several versions.
+    const versionButton = renderVersionSelector(shell, this.versions, this.activeVersion, this.strings.version);
+    versionButton?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      renderVersionMenu(shell, this.versions, this.activeVersion, (version) => this.setVersion(version.id));
+    });
 
     // Language selector, only when more than one language is declared.
     const langButton = renderLanguageSelector(shell, this.manifest.languages, this.locale, this.strings.language);
@@ -286,7 +320,7 @@ export class NimblyDocsElement extends HTMLElement {
         renderThemeMenu(shell, this.manifest!.themeChoices, this.themes!.get().theme, (name) => {
           this.setTheme(name);
           const nameEl = themeButton.querySelector<HTMLElement>(".nd-theme-name");
-          if (nameEl) nameEl.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+          if (nameEl) nameEl.textContent = themeLabel(name);
           announce(shell.live, `Theme: ${name}`);
         });
       });
@@ -296,6 +330,7 @@ export class NimblyDocsElement extends HTMLElement {
   }
 
   private onGlobalKeydown(event: KeyboardEvent): void {
+    if (this.shell && handleTabKeydown(event, this.shell.content)) return;
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && this.searchView) {
       event.preventDefault();
       this.openSearch();
@@ -314,6 +349,9 @@ export class NimblyDocsElement extends HTMLElement {
     button.setAttribute("aria-label", APPEARANCE_LABEL[state.appearance]);
     button.setAttribute("title", APPEARANCE_LABEL[state.appearance]);
     button.dataset.appearance = state.appearance;
+    // Keep the palette selector in sync with programmatic setTheme() calls too.
+    const themeName = this.shell?.themeButton?.querySelector<HTMLElement>(".nd-theme-name");
+    if (themeName) themeName.textContent = themeLabel(state.theme);
     // Pele diagrams follow CSS variables, so a scheme change needs no re-render;
     // this call is a cheap no-op once blocks are already rendered.
     void this.renderDiagrams();
@@ -335,18 +373,92 @@ export class NimblyDocsElement extends HTMLElement {
     if (this.shell) applyBrand(this.shell, this.brandConfig());
   }
 
+  /** Resolve a route's `@version` to a declared version; unknown or absent ids mean the default. */
+  private versionFor(id: string | null): ResolvedVersion | null {
+    const fallback = this.versions.find((v) => v.isDefault) ?? null;
+    return (id && this.versions.find((v) => v.id === id && !v.isDefault)) || fallback;
+  }
+
+  /**
+   * Load another version's manifest and re-mount the shell around it, then
+   * replay the current route. The version list always comes from the root.
+   */
+  private async activateVersion(version: ResolvedVersion | null): Promise<void> {
+    const loader = this.loader;
+    if (!version || !loader) return;
+    const sequence = ++this.navigating;
+    this.renderPageLoading();
+    try {
+      const fetched = version.isDefault && this.rootManifest ? this.rootManifest : await loader.fetchManifest(version.manifestUrl);
+      if (sequence !== this.navigating) return;
+      // A version manifest must not redefine the version list (snapshots may carry a stale copy).
+      const raw = !version.isDefault && fetched && typeof fetched === "object" ? { ...(fetched as Record<string, unknown>), versions: undefined } : fetched;
+      let manifest = normalizeManifest(raw, version.manifestUrl);
+      const codes = manifest.languages.map((l) => l.code);
+      const locale = codes.includes(this.locale) ? this.locale : manifest.languages.length > 0 ? manifest.defaultLanguage : manifest.language;
+      if (manifest.languages.length > 0) manifest = normalizeManifest(raw, version.manifestUrl, locale);
+      this.rawManifest = raw;
+      this.manifestUrl = version.manifestUrl;
+      this.manifest = manifest;
+      this.locale = locale;
+      this.strings = stringsFor(locale);
+      this.activeVersion = version;
+      setRouteVersion(version.isDefault ? null : version.id);
+      this.mountShell(this.options());
+      this.router.start((route) => void this.onRoute(route));
+    } catch (err) {
+      if (sequence !== this.navigating) return;
+      const code = err instanceof ManifestError ? "manifest-invalid" : "manifest-fetch";
+      this.showError({ code, message: "Unable to load this documentation version.", cause: err });
+      this.debug(err);
+    }
+  }
+
+  private renderVersionBanner(page: ResolvedPage): void {
+    const banner = this.shell?.versionBanner, version = this.activeVersion;
+    if (!banner) return;
+    if (!version || version.status === "current" || this.versions.length < 2) { banner.hidden = true; return; }
+    const template = version.status === "legacy" ? this.strings.versionLegacy : this.strings.versionUnreleased;
+    const text = document.createElement("span");
+    text.textContent = template.replace("{version}", version.label);
+    const latest = this.versions.find((v) => v.isDefault)!;
+    const link = document.createElement("a");
+    link.href = buildHash(page.id, null, null);
+    link.textContent = this.strings.versionLatest;
+    link.addEventListener("click", () => { this.versionFallback = true; });
+    banner.dataset.status = version.status;
+    banner.replaceChildren(text, document.createTextNode(" "), link);
+    banner.hidden = latest === version;
+  }
+
   private async onRoute(route: Route): Promise<void> {
     const manifest = this.manifest, shell = this.shell, loader = this.loader;
     if (!manifest || !shell || !loader) return;
+    if (this.versions.length > 0) {
+      const wanted = this.versionFor(route.version);
+      if (wanted && wanted !== this.activeVersion) { await this.activateVersion(wanted); return; }
+    }
     const pageId = route.pageId || manifest.homeId;
     const page = manifest.pages.get(pageId);
+    if (!page && this.versionFallback) {
+      // The page does not exist in the version just selected: land on its home instead.
+      this.versionFallback = false;
+      this.router.go(manifest.homeId, null, true);
+      return;
+    }
+    this.versionFallback = false;
     if (!page) { this.showError({ code: "page-not-found", message: "The requested page does not exist." }); return; }
+    this.currentPageId = page.id;
     const sequence = ++this.navigating;
     this.renderPageLoading();
     try {
       const markdown = await loader.fetchFirst(page.candidates);
       if (sequence !== this.navigating) return;
-      const result = renderContent(markdown, { manifest, page, debug: this.options().debug, copyCode: manifest.features.copyCode, plugins: NimblyDocsElement.plugins });
+      const s = this.strings;
+      const result = renderContent(markdown, {
+        manifest, page, debug: this.options().debug, copyCode: manifest.features.copyCode, plugins: NimblyDocsElement.plugins,
+        labels: { note: s.note, tip: s.tip, important: s.important, warning: s.warning, danger: s.danger },
+      });
       shell.content.replaceChildren(result.fragment);
       shell.content.removeAttribute("aria-busy");
       void this.renderDiagrams();
@@ -354,10 +466,11 @@ export class NimblyDocsElement extends HTMLElement {
       const tocEnabled = this.options().toc !== "off" && manifest.features.toc;
       if (tocEnabled) this.tocView?.render(page.id, result.doc.toc); else shell.toc.hidden = true;
       this.renderMeta(page);
+      this.renderVersionBanner(page);
       this.searchView?.index(page.id, result.doc.text, result.doc.toc.map((h) => h.text));
       document.title = `${page.title} · ${manifest.title}`;
       announce(shell.live, `Loaded ${page.title}`);
-      this.dispatchEvent(new CustomEvent("docs-navigate", { detail: { id: page.id, url: page.url }, bubbles: true, composed: true }));
+      this.dispatchEvent(new CustomEvent("docs-navigate", { detail: { id: page.id, url: page.url, version: this.activeVersion?.id ?? null }, bubbles: true, composed: true }));
       this.scrollToAnchor(route.anchor);
       focusMain(shell.main);
     } catch (err) {
@@ -386,7 +499,7 @@ export class NimblyDocsElement extends HTMLElement {
   }
 
   private pageLink(page: ResolvedPage, direction: string, cls: string): HTMLAnchorElement {
-    const a = document.createElement("a"); a.className = cls; a.href = `#/${encodeURI(page.id)}`;
+    const a = document.createElement("a"); a.className = cls; a.href = buildHash(page.id);
     const small = document.createElement("span"); small.className = "nd-page-dir"; small.textContent = direction;
     a.append(small, document.createTextNode(page.title)); return a;
   }

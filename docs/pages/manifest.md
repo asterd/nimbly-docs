@@ -23,8 +23,9 @@
   // Default content language when no `languages` selector is used.
   "language": "en",
 
-  // Default palette: nimbus | midnight | paper | sabbia | a custom theme name.
-  "theme": "sabbia",
+  // Default theme: nimbly (default) | nimbus | midnight | paper | sabbia |
+  // material | stellar | evergreen | a custom theme name.
+  "theme": "nimbly",
 
   // Show a header palette selector for live switching. true = all built-ins;
   // an array narrows the offered palettes, e.g. ["nimbus","midnight"].
@@ -63,6 +64,13 @@
     { "code": "it", "label": "Italiano" }
   ],
 
+  // Optional documentation versions (root manifest only). Exactly one entry
+  // omits "manifest": the version this file describes. See "Versioned docs".
+  "versions": [
+    { "id": "2.x", "label": "v2.x (latest)", "status": "current" },
+    { "id": "1.x", "manifest": "./versions/1.x/index.json", "status": "legacy" }
+  ],
+
   // Feature switches. All default to enabled except editLink.
   "features": {
     "search": true,
@@ -77,7 +85,7 @@
   "themes": [
     {
       "name": "corporate",
-      "base": "nimbus",
+      "base": "nimbly",
       "light": { "color-brand": "#005ea8", "color-brand-strong": "#00497f" },
       "dark":  { "color-brand": "#7fb3ff" }
     }
@@ -118,7 +126,7 @@
 | `title` | ✓ | localizable | Site title and default header brand. |
 | `description` |  | localizable | Metadata/search text. |
 | `language` |  | string | Default content language (default `en`). |
-| `theme` |  | string | Built-in or custom palette name. |
+| `theme` |  | string | Built-in or custom theme name; defaults to `nimbly`. |
 | `chooseThemes` |  | boolean \| string[] | Show a header palette selector; array narrows the choices. |
 | `appearance` |  | enum | Default `light` / `dark` / `auto` (attribute overrides it). |
 | `logo` |  | string | Relative/absolute image URL. |
@@ -128,8 +136,9 @@
 | `links` |  | array | Header icon links (see below). |
 | `apiReference` |  | object | Pinned sidebar link `{ url, label? }`. |
 | `languages` |  | array | `{ code, label }[]`; first is default. |
+| `versions` |  | array | `{ id, label?, manifest?, status? }[]`; see [Versioned docs](./versions.md). |
 | `features` |  | object | Feature switches. |
-| `themes` |  | array | Custom palettes (token maps). |
+| `themes` |  | array | Custom themes (token maps); see [Themes](./themes.md) for the token list. |
 | `sections` | ✓ | array | Navigation tree (≥1 section). |
 
 ### Sections

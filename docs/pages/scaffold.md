@@ -66,3 +66,13 @@ With `--lang en,it` the manifest includes a `languages` block (so the header lan
 3. Edit `index.json` to shape the navigation, then write your Markdown under `pages/`.
 
 The generated files are a starting point: safe to edit, rename or delete. Re-running without `--force` never clobbers your work.
+
+## Freeze a release
+
+When you ship a new release, freeze the current docs as a version before you edit them:
+
+```bash
+npx nimbly-docs-version 1.x --docs my-docs --label "v1.x"
+```
+
+This copies the manifest, pages and images to `my-docs/versions/1.x/` and registers the copy in the root manifest. The header then shows a version selector. See [Versioned docs](./versions.md).

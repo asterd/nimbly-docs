@@ -4,6 +4,10 @@
 
 > Questa pagina è la variante in italiano: cambia lingua dal selettore nell'header per tornare all'inglese.
 
+:::tip Novità della 0.0.6
+Nuovo tema predefinito **Nimbly Classic**, temi ispirati a Material, Starlight e Docusaurus, componenti interattivi (tab, code group, callout, step, card) e documentazione multi-versione. Prova il selettore di versione accanto al logo.
+:::
+
 ## Perché esiste
 
 La documentazione viene spesso distribuita insieme a un'applicazione, ma gli stack moderni possono rendere un piccolo manuale locale dipendente da un framework pesante o da richieste di rete a terzi. Nimbly Docs mantiene il modello operativo volutamente semplice:

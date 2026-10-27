@@ -26,6 +26,20 @@ export interface UIStrings {
   poweredBy: string;
   backToApp: string;
   theme: string;
+  /** Default callout titles. */
+  note: string;
+  tip: string;
+  important: string;
+  warning: string;
+  danger: string;
+  /** Version selector label. */
+  version: string;
+  /** Banner for legacy versions; `{version}` is replaced by the version label. */
+  versionLegacy: string;
+  /** Banner for unreleased versions; `{version}` is replaced by the version label. */
+  versionUnreleased: string;
+  /** Link from a version banner to the default version. */
+  versionLatest: string;
 }
 
 const en: UIStrings = {
@@ -46,6 +60,15 @@ const en: UIStrings = {
   poweredBy: "Powered by",
   backToApp: "Back to app",
   theme: "Theme",
+  note: "Note",
+  tip: "Tip",
+  important: "Important",
+  warning: "Warning",
+  danger: "Danger",
+  version: "Version",
+  versionLegacy: "You are viewing the documentation for {version}, which is no longer actively maintained.",
+  versionUnreleased: "You are viewing unreleased documentation for {version}.",
+  versionLatest: "Go to the latest version",
 };
 
 const DICTIONARIES: Record<string, Partial<UIStrings>> = {
@@ -68,6 +91,15 @@ const DICTIONARIES: Record<string, Partial<UIStrings>> = {
     poweredBy: "Powered by",
     backToApp: "Torna all'app",
     theme: "Tema",
+    note: "Nota",
+    tip: "Suggerimento",
+    important: "Importante",
+    warning: "Attenzione",
+    danger: "Pericolo",
+    version: "Versione",
+    versionLegacy: "Stai consultando la documentazione di {version}, non più mantenuta attivamente.",
+    versionUnreleased: "Stai consultando la documentazione non ancora rilasciata di {version}.",
+    versionLatest: "Vai alla versione più recente",
   },
   es: {
     searchPlaceholder: "Buscar en la documentación",
@@ -87,6 +119,15 @@ const DICTIONARIES: Record<string, Partial<UIStrings>> = {
     poweredBy: "Powered by",
     backToApp: "Volver a la app",
     theme: "Tema",
+    note: "Nota",
+    tip: "Consejo",
+    important: "Importante",
+    warning: "Advertencia",
+    danger: "Peligro",
+    version: "Versión",
+    versionLegacy: "Estás viendo la documentación de {version}, que ya no se mantiene activamente.",
+    versionUnreleased: "Estás viendo documentación no publicada de {version}.",
+    versionLatest: "Ir a la última versión",
   },
   fr: {
     searchPlaceholder: "Rechercher dans la documentation",
@@ -106,6 +147,15 @@ const DICTIONARIES: Record<string, Partial<UIStrings>> = {
     poweredBy: "Powered by",
     backToApp: "Retour à l'app",
     theme: "Thème",
+    note: "Note",
+    tip: "Astuce",
+    important: "Important",
+    warning: "Attention",
+    danger: "Danger",
+    version: "Version",
+    versionLegacy: "Vous consultez la documentation de {version}, qui n'est plus activement maintenue.",
+    versionUnreleased: "Vous consultez une documentation non publiée de {version}.",
+    versionLatest: "Aller à la dernière version",
   },
   de: {
     searchPlaceholder: "Dokumentation durchsuchen",
@@ -125,6 +175,15 @@ const DICTIONARIES: Record<string, Partial<UIStrings>> = {
     poweredBy: "Powered by",
     backToApp: "Zurück zur App",
     theme: "Thema",
+    note: "Hinweis",
+    tip: "Tipp",
+    important: "Wichtig",
+    warning: "Warnung",
+    danger: "Gefahr",
+    version: "Version",
+    versionLegacy: "Sie sehen die Dokumentation für {version}, die nicht mehr aktiv gepflegt wird.",
+    versionUnreleased: "Sie sehen unveröffentlichte Dokumentation für {version}.",
+    versionLatest: "Zur neuesten Version",
   },
 };
 

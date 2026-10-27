@@ -31,12 +31,14 @@ The primary design boundary is intentional: **manifests describe documentation; 
 - **No production dependencies**: native browser APIs only; no framework or network-loaded asset.
 - **Manifest-first IA**: validated nested sections, globally unique stable ids, page limits, relative URL resolution, home page and feature switches.
 - **Hash routing**: deep links such as `#/api/orders#cancellation`, refresh support, browser back/forward, no server rewrite rules.
-- **Safe Markdown**: headings, links, images, lists, task lists, blockquotes, tables, inline/fenced code and compact highlighting. Raw HTML is escaped.
+- **Safe Markdown**: headings, links, images, lists, task lists, blockquotes, tables, inline/fenced code (with optional titles) and compact highlighting. Raw HTML is escaped.
+- **Interactive components ("MDX-lite")**: `:::` directives for callouts, tabs, code groups with a synced language switch, steps, cards and details, plus GitHub alerts (`> [!NOTE]`). They are declarative only: the parser emits sanitized markup, and the viewer adds behaviour and ARIA afterwards. MDX itself is deliberately unsupported.
+- **Versioned docs**: the root manifest lists versions; readers get a header version selector, `legacy`/`unreleased` banners and `#/@version/page` deep links. `nimbly-docs-version` freezes a release.
 - **Defense in depth**: HTML allow-list sanitization, hostile URL rejection, no inline SVG, no event handlers, lazy images, atomic fragment rendering.
 - **Search**: local progressive index; `Cmd/Ctrl+K` dialog; title/heading/full-text scoring; no server or third-party service.
 - **Responsive navigation**: collapsible sidebar, session-scoped expansion state, modal mobile drawer and contextual TOC.
 - **Accessibility**: semantic landmarks, skip link, visible focus, live page announcements, keyboard search/drawer controls and reduced-motion support.
-- **Themes**: `nimbus`, `midnight`, `paper`, adaptive `auto`, and warm **`sabbia`**—inspired by Shootly’s sand/taupe aesthetic. Token-only custom themes are supported.
+- **Themes**: the default **Nimbly Classic** (`nimbly`), designed for readability on any device; `nimbus`, `midnight`, `paper`, `sabbia`; and `material`, `stellar` and `evergreen`, inspired by Material for MkDocs, Starlight and the Docusaurus classic theme. Every theme has light and dark variants. Token-only custom themes can also restyle the header, sidebar and type ("skin" tokens).
 - **Optional diagrams**: opt-in Mermaid rendering (`mermaid="on"`), lazy-loaded only when a page contains a diagram, in strict security mode.
 - **Header links**: manifest-declared GitHub / LinkedIn / external links rendered as icons, left of the appearance toggle.
 - **API reference link**: a pinned Swagger/OpenAPI link at the bottom of the sidebar.
@@ -162,7 +164,7 @@ It produces `index.html`, `index.json` (convention-based sources), `manifest.sch
   manifest="./index.json"
   title="Acme Operations"
   logo="./assets/acme-mark.svg"
-  theme="sabbia"
+  theme="nimbly"
   appearance="auto"
   locale="en"
   router="hash"
@@ -178,7 +180,7 @@ It produces `index.html`, `index.json` (convention-based sources), `manifest.sch
 | `manifest` | `./index.json` | Relative or absolute HTTP(S) manifest URL. Do not supply it from an untrusted query parameter. |
 | `title` | manifest title, then `Nimbly Docs` | Optional application name for the header brand. |
 | `logo` | built-in book glyph | Optional relative or absolute logo URL; a failed image falls back to the built-in glyph. |
-| `theme` | manifest theme, then `nimbus` | Palette: `nimbus`, `midnight`, `paper`, `sabbia`, or a manifest custom palette. Legacy `light`/`dark`/`auto` values remain accepted as appearance aliases. |
+| `theme` | manifest theme, then `nimbly` | Theme: `nimbly`, `nimbus`, `midnight`, `paper`, `sabbia`, `material`, `stellar`, `evergreen`, or a manifest custom theme. Legacy `light`/`dark`/`auto` values remain accepted as appearance aliases. |
 | `appearance` | `auto` | `light`, `dark`, or `auto`. It controls only the colour-scheme, never changes the selected palette. |
 | `locale` | manifest `language` | UI locale hint; content remains authored Markdown. |
 | `router` | `hash` | `hash` only in v1. |
@@ -194,6 +196,7 @@ const viewer = document.querySelector<NimblyDocsElement>("nimbly-docs")!;
 viewer.navigate("api/orders", "create-an-order");
 viewer.setTheme("midnight");      // palette
 viewer.setAppearance("dark");     // light | dark | auto
+viewer.setVersion("1.x");         // documentation version
 viewer.openSearch();
 await viewer.reload();
 ```
@@ -203,6 +206,7 @@ await viewer.reload();
 | `navigate(id, anchor?)` | Changes to `#/id` or `#/id#anchor`. |
 | `reload()` | Re-fetches and revalidates the manifest. |
 | `setTheme(name)` | Applies and locally persists a valid theme; returns its applied name. |
+| `setVersion(id)` | Switches to a declared documentation version, keeping the current page when it exists there. |
 | `openSearch()` | Opens the progressive local search dialog. |
 
 ### Events
@@ -211,7 +215,7 @@ All events bubble and are composed, so the host app can listen on the custom ele
 
 ```ts
 viewer.addEventListener("docs-ready", ({ detail }) => console.info(detail.title));
-viewer.addEventListener("docs-navigate", ({ detail }) => console.info(detail.id, detail.url));
+viewer.addEventListener("docs-navigate", ({ detail }) => console.info(detail.id, detail.url, detail.version));
 viewer.addEventListener("docs-error", ({ detail }) => console.warn(detail.code, detail.message));
 ```
 
@@ -323,16 +327,69 @@ Nimbly Docs intentionally implements a focused, deterministic Markdown dialect:
 
 Heading ids are stable slugs. The view uses routes in the form `#/page-id#heading-id`; the hash is retained across a refresh and copy/paste. External links are sanitized and receive `target="_blank" rel="noopener noreferrer"`; relative links are resolved against their current Markdown URL.
 
+## Interactive components
+
+MDX is not supported, by design: it executes JSX compiled to JavaScript. Nimbly Docs offers the same building blocks as declarative `:::` directives:
+
+````md
+:::tip Optional title
+Callouts: note, tip, important, warning, danger.
+:::
+
+:::code-group
+```js title="JavaScript"
+const orders = await (await fetch("/api/orders")).json();
+```
+```python [Python]
+orders = requests.get("/api/orders").json()
+```
+:::
+
+:::tabs {sync=os}
+:::tab macOS
+brew install node
+:::
+:::tab Linux
+sudo apt install nodejs
+:::
+:::
+````
+
+Code groups share the reader's language choice across the page (stored as `nimbly-docs:tabs:<key>`). Directives also include `steps`, `cards`/`card` and `details`. Nesting closes by depth and a `:::` line inside a code fence is ignored. The parser only emits allow-listed tags with `data-*` hints; buttons, ARIA and icons are added after sanitization. See the live docs' *Interactive components* page.
+
+## Versioned docs
+
+The root manifest can list documentation versions. Each one points at its own complete manifest:
+
+```json
+"versions": [
+  { "id": "2.x", "label": "v2.x (latest)", "status": "current" },
+  { "id": "1.x", "manifest": "./versions/1.x/index.json", "status": "legacy" }
+]
+```
+
+Readers switch from the header version selector. Pages of `legacy` and `unreleased` versions show a localized banner, and routes carry the version (`#/@1.x/installation`). Freeze a release with:
+
+```bash
+npx nimbly-docs-version 1.x --docs docs --label "v1.x"
+```
+
 ## Themes and host customization
 
 ### Included themes
 
 | Theme | Description |
 | --- | --- |
+| `nimbly` | **Nimbly Classic**, the default: teal and amber; 16px/1.7 type, a 72ch measure, ~15.9:1 body contrast, native font stacks. |
 | `nimbus` | Clean neutral palette with explicit light and dark variants. |
 | `midnight` | Deep navy palette with explicit light and dark variants. |
 | `paper` | High-contrast editorial palette with explicit light and dark variants. |
 | `sabbia` | Warm off-white, taupe and umber palette inspired by Shootly, with a dark counterpart. |
+| `material` | Coloured app bar, Roboto stack, light headings. Inspired by Material for MkDocs. |
+| `stellar` | Violet accent, filled active navigation item, dark-first. Inspired by Starlight (Astro). |
+| `evergreen` | White navbar, green brand, quiet chrome. Inspired by the Docusaurus classic theme. |
+
+The "inspired by" themes are recreated with Nimbly tokens; they copy no code, fonts or brand assets and load no remote fonts. The full token list, including the skin tokens (`font-size`, `line-height`, `heading-weight`, `header-*`, `sidebar-bg`, `nav-active-*`), is in the live docs' *Themes* page.
 
 A palette (`theme`) and an appearance (`light`, `dark`, `auto`) are independent. The header control changes **only** appearance in the deterministic order `light → dark → auto`; it never changes the palette. `auto` follows live `prefers-color-scheme` changes. The two choices are stored separately as `nimbly-docs:theme` and `nimbly-docs:appearance` in `localStorage` when available. No cookie is used.
 
@@ -345,7 +402,7 @@ The header uses the manifest `title` and optional `logo` by default. Override ei
   manifest="./index.json"
   title="Acme Operations"
   logo="./assets/acme-mark.svg"
-  theme="sabbia"
+  theme="nimbly"
   appearance="dark">
 </nimbly-docs>
 ```
@@ -358,7 +415,7 @@ Custom manifest themes can override only approved token names with simple valida
 {
   "themes": [{
     "name": "ocean",
-    "base": "nimbus",
+    "base": "nimbly",
     "light": {
       "color-bg": "#f5fbff",
       "color-text": "#102a43",
@@ -505,11 +562,11 @@ Mermaid rendering is opt-in and lazy. Enable it with `mermaid="on"`; the library
 
 | Metric | Value |
 | --- | --- |
-| Raw (minified) | ~67 KB |
-| **Gzip** | **~20 KB** |
-| Brotli | ~18 KB |
+| Raw (minified) | ~117 KB |
+| **Gzip** | **~32 KB** |
+| Brotli | ~28 KB |
 | Gzip budget | 120 KB |
-| Headroom | ~100 KB |
+| Headroom | ~88 KB |
 
 These figures cover the parser, sanitizer, search, UI, icons, all themes and highlighting; optional Mermaid is excluded because it loads lazily. `npm run size` prints exact numbers per build and gates releases. The deployed demo’s *Technical details* page reproduces this table.
 

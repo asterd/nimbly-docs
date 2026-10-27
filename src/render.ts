@@ -9,6 +9,7 @@ import { renderMarkdown } from "./markdown.js";
 import { sanitizeToFragment } from "./sanitize.js";
 import { buildHash } from "./router.js";
 import { copyIcon, checkIcon } from "./icons.js";
+import { enhanceComponents, type CalloutLabels } from "./components.js";
 import type { ResolvedManifest, ResolvedPage, RenderedDoc, NimblyPlugin } from "./types.js";
 
 export interface RenderContext {
@@ -17,6 +18,8 @@ export interface RenderContext {
   debug: boolean;
   copyCode: boolean;
   plugins: NimblyPlugin[];
+  /** Localized default titles for callouts without an authored title. */
+  labels: CalloutLabels;
 }
 
 export interface RenderResult {
@@ -43,6 +46,8 @@ export function renderContent(markdown: string, ctx: RenderContext): RenderResul
 
   rewriteLinksAndAssets(fragment, ctx);
   if (ctx.copyCode) addCopyButtons(fragment);
+  addCodeTitles(fragment);
+  enhanceComponents(fragment, ctx.labels);
 
   for (const plugin of ctx.plugins) {
     if (plugin.onPageRendered) plugin.onPageRendered(fragment, ctx.page);
@@ -127,6 +132,27 @@ function addCopyButtons(root: ParentNode): void {
     parent.insertBefore(wrapper, pre);
     wrapper.appendChild(btn);
     wrapper.appendChild(pre);
+  }
+}
+
+/**
+ * Show a title bar above code blocks authored with ```lang title="…". Blocks
+ * inside a code group are labelled by their tab instead.
+ */
+function addCodeTitles(root: ParentNode): void {
+  for (const code of Array.from(root.querySelectorAll<HTMLElement>("pre > code[data-title]"))) {
+    const pre = code.parentElement!;
+    if (pre.closest(".nd-code-group")) continue;
+    const bar = document.createElement("div");
+    bar.className = "nd-code-title";
+    bar.textContent = code.dataset.title ?? "";
+    const host = pre.closest(".nd-codeblock") ?? pre;
+    if (host === pre) {
+      pre.parentNode!.insertBefore(bar, pre);
+    } else {
+      host.prepend(bar);
+      host.classList.add("nd-codeblock-titled");
+    }
   }
 }
 

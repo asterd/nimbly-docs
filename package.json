@@ -1,6 +1,6 @@
 {
   "name": "nimbly-docs",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A single-bundle, zero-dependency, embeddable Markdown documentation viewer Web Component. A modern, secure alternative to Docsify.",
   "type": "module",
   "license": "MIT",
@@ -16,7 +16,8 @@
     "static-site"
   ],
   "bin": {
-    "nimbly-docs-init": "scripts/create-docs.mjs"
+    "nimbly-docs-init": "scripts/create-docs.mjs",
+    "nimbly-docs-version": "scripts/snapshot-version.mjs"
   },
   "main": "./dist/nimbly-docs.min.js",
   "module": "./dist/nimbly-docs.min.js",
@@ -42,7 +43,8 @@
     "size": "node scripts/build.mjs && node scripts/size.mjs",
     "pages": "node scripts/pages.mjs",
     "init": "node scripts/create-docs.mjs",
-    "test": "node --test tests/",
+    "version:snapshot": "node scripts/snapshot-version.mjs",
+    "test": "node --test tests/*.test.mjs",
     "dev": "node scripts/build.mjs --dev --watch",
     "serve": "node scripts/serve.mjs"
   },

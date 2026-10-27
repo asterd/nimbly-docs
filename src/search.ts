@@ -1,5 +1,6 @@
 import type { ResolvedManifest, SearchDoc, SearchHit } from "./types.js";
 import { closeIcon } from "./icons.js";
+import { buildHash } from "./router.js";
 
 /**
  * Local search.
@@ -214,7 +215,7 @@ export class SearchController {
       const item = document.createElement("a");
       item.className = "nd-search-result";
       item.id = `nd-search-hit-${index}`;
-      item.href = `#/${encodeURI(hit.id)}`;
+      item.href = buildHash(hit.id);
       item.setAttribute("role", "option");
       item.setAttribute("aria-selected", String(index === this.active));
 
