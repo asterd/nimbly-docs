@@ -4,7 +4,7 @@
   "title": "Nimbly Docs",
   "description": "A secure, single-bundle Markdown documentation viewer",
   "language": "en",
-  "theme": "sabbia",
+  "theme": "nimbly",
   "home": "welcome",
   "appearance": "auto",
   "chooseThemes": true,
@@ -19,6 +19,10 @@
   "languages": [
     { "code": "en", "label": "English" },
     { "code": "it", "label": "Italiano" }
+  ],
+  "versions": [
+    { "id": "0.0.6", "label": "v0.0.6 (latest)", "status": "current" },
+    { "id": "0.0.5", "label": "v0.0.5", "manifest": "./versions/0.0.5/index.json", "status": "legacy" }
   ],
   "features": {
     "search": true,
@@ -47,7 +51,7 @@
       "id": "getting-started",
       "title": { "en": "Getting started", "it": "Per iniziare" },
       "pages": [
-        { "id": "welcome", "title": { "en": "Welcome", "it": "Benvenuto" }, "source": "welcome.md", "description": "What Nimbly Docs is and why it exists.", "badge": "new" },
+        { "id": "welcome", "title": { "en": "Welcome", "it": "Benvenuto" }, "source": "welcome.md", "description": "What Nimbly Docs is and why it exists." },
         { "id": "installation", "title": "Installation", "source": "installation.md" },
         { "id": "configuration", "title": "Configuration", "source": "configuration.md" },
         { "id": "manifest", "title": "Manifest reference", "source": "manifest.md" },
@@ -63,6 +67,7 @@
           "title": { "en": "Content", "it": "Contenuti" },
           "pages": [
             { "id": "markdown", "title": "Markdown features", "source": "markdown.md" },
+            { "id": "components", "title": "Interactive components", "source": "components.md", "badge": "new" },
             { "id": "security", "title": "Security model", "source": "security.md" }
           ]
         },
@@ -70,7 +75,8 @@
           "id": "guides-customization",
           "title": { "en": "Customization", "it": "Personalizzazione" },
           "pages": [
-            { "id": "themes", "title": "Themes", "source": "themes.md" },
+            { "id": "themes", "title": "Themes", "source": "themes.md", "badge": "new" },
+            { "id": "versions", "title": "Versioned docs", "source": "versions.md", "badge": "new" },
             { "id": "diagrams", "title": "Diagrams (Mermaid)", "source": "diagrams.md", "badge": "opt-in" },
             { "id": "pele-test", "title": "Pele engine test", "source": "pele-test.md", "badge": "trial" }
           ]

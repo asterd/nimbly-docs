@@ -15,6 +15,7 @@ import {
   APPEARANCE_STORAGE_KEY,
   APPEARANCES,
   BUILT_IN_THEMES,
+  DEFAULT_THEME,
   THEME_STORAGE_KEY,
 } from "./constants.js";
 import type { ManifestTheme, ResolvedManifest } from "./types.js";
@@ -36,7 +37,11 @@ export interface ThemeState {
 const TOKEN_ALLOWLIST = new Set([
   "color-bg", "color-surface", "color-surface-raised", "color-text", "color-muted",
   "color-brand", "color-brand-strong", "color-border", "color-code-bg", "color-code-text",
-  "color-focus", "font-body", "font-mono", "content-max-width", "radius", "shadow",
+  "color-focus", "color-accent", "font-body", "font-mono", "content-max-width", "radius", "shadow",
+  // Skin tokens: structural styling beyond the colour palette.
+  "font-size", "line-height", "heading-weight", "header-bg", "header-text", "header-muted",
+  "header-border", "sidebar-bg", "nav-active-bg", "nav-active-text",
+  "color-note", "color-tip", "color-warning", "color-danger",
 ]);
 
 const BUILT_INS = new Set<string>(BUILT_IN_THEMES);
@@ -53,7 +58,7 @@ function isAppearance(value: string | null): value is Appearance {
 }
 
 export class ThemeManager {
-  private state: ThemeState = { theme: "nimbus", appearance: "auto", scheme: "light" };
+  private state: ThemeState = { theme: DEFAULT_THEME, appearance: "auto", scheme: "light" };
   private query: MediaQueryList | null = null;
   private readonly onSchemeChange = (): void => {
     // Only `auto` follows the OS; an explicit choice must never be overridden.
@@ -124,9 +129,9 @@ export class ThemeManager {
   }
 
   private resolveTheme(name: string | null | undefined): string {
-    if (!name) return "nimbus";
+    if (!name) return DEFAULT_THEME;
     if (BUILT_INS.has(name) || this.manifest.themes.has(name)) return name;
-    return "nimbus";
+    return DEFAULT_THEME;
   }
 
   private prefersDark(): boolean {
@@ -147,7 +152,7 @@ export class ThemeManager {
     this.clearTokens();
     if (custom) {
       // A custom palette inherits a built-in base, then layers validated tokens.
-      const base = custom.base && BUILT_INS.has(custom.base) ? custom.base : "nimbus";
+      const base = custom.base && BUILT_INS.has(custom.base) ? custom.base : DEFAULT_THEME;
       this.host.setAttribute("data-theme-base", base);
       this.applyTokens(custom, scheme);
     } else {

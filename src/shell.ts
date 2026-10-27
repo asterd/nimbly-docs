@@ -1,6 +1,6 @@
-import { apiIcon, arrowLeftIcon, bookIcon, chevronIcon, externalIcon, githubIcon, globeIcon, linkedinIcon, menuIcon, paletteIcon } from "./icons.js";
-import { DEFAULT_BRAND_TITLE } from "./constants.js";
-import type { ManifestApiReference, ManifestLanguage, ManifestLink } from "./types.js";
+import { apiIcon, arrowLeftIcon, bookIcon, chevronIcon, externalIcon, githubIcon, globeIcon, layersIcon, linkedinIcon, menuIcon, paletteIcon } from "./icons.js";
+import { DEFAULT_BRAND_TITLE, THEME_LABELS } from "./constants.js";
+import type { ManifestApiReference, ManifestLanguage, ManifestLink, ResolvedVersion } from "./types.js";
 import type { UIStrings } from "./i18n.js";
 
 /** Brand identity resolved from attributes, then the manifest, then defaults. */
@@ -37,6 +37,8 @@ export interface ShellRefs {
   appearanceButton: HTMLButtonElement;
   languageButton: HTMLButtonElement | null;
   themeButton: HTMLButtonElement | null;
+  versionButton: HTMLButtonElement | null;
+  versionBanner: HTMLElement;
   search: HTMLElement;
   searchButton: HTMLButtonElement;
   sidebar: HTMLElement;
@@ -83,6 +85,7 @@ export function createShell(config: ShellConfig): ShellRefs {
           <span class="nd-brand-mark" aria-hidden="true">${bookIcon()}</span>
           <span class="nd-brand-label"></span>
         </a>
+        <div class="nd-version" hidden></div>
       </div>
       <div class="nd-search">
         <button class="nd-search-trigger" type="button" aria-haspopup="dialog">
@@ -104,6 +107,7 @@ export function createShell(config: ShellConfig): ShellRefs {
         <div class="nd-sidebar-footer" hidden></div>
       </nav>
       <main id="nd-main" class="nd-main" part="main" tabindex="-1">
+        <div class="nd-version-banner" role="note" hidden></div>
         <nav class="nd-breadcrumbs" aria-label="Breadcrumb" hidden></nav>
         <article class="nd-content" part="content"></article>
         <nav class="nd-pagination" aria-label="Page navigation" hidden></nav>
@@ -137,6 +141,8 @@ export function createShell(config: ShellConfig): ShellRefs {
     appearanceButton: pick(".nd-appearance-button"),
     languageButton: null,
     themeButton: null,
+    versionButton: null,
+    versionBanner: pick(".nd-version-banner"),
     search: pick(".nd-search"),
     searchButton: pick(".nd-search-trigger"),
     sidebar: pick(".nd-sidebar"),
@@ -316,8 +322,8 @@ export function renderLanguageMenu(
 }
 
 /** Human label for a palette name. */
-function themeLabel(name: string): string {
-  return name.charAt(0).toUpperCase() + name.slice(1);
+export function themeLabel(name: string): string {
+  return THEME_LABELS[name] ?? name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 /** Build the header palette selector. Returns the button, or null when disabled. */
@@ -378,6 +384,79 @@ export function renderThemeMenu(
   host.appendChild(menu);
   const dismiss = (event: Event): void => {
     if (!menu.contains(event.target as Node) && event.target !== refs.themeButton) {
+      menu.remove();
+      refs.app.removeEventListener("click", dismiss, true);
+    }
+  };
+  setTimeout(() => refs.app.addEventListener("click", dismiss, true), 0);
+}
+
+/** Build the header version selector. Returns the button, or null when unversioned. */
+export function renderVersionSelector(
+  refs: ShellRefs,
+  versions: ResolvedVersion[],
+  active: ResolvedVersion | null,
+  label: string
+): HTMLButtonElement | null {
+  const host = refs.app.querySelector<HTMLElement>(".nd-version");
+  if (!host) return null;
+  host.replaceChildren();
+  if (versions.length < 2 || !active) {
+    host.hidden = true;
+    refs.versionButton = null;
+    return null;
+  }
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "nd-lang-button nd-version-button";
+  button.setAttribute("aria-label", `${label}: ${active.label}`);
+  button.title = label;
+  button.setAttribute("aria-haspopup", "listbox");
+  button.dataset.status = active.status;
+  button.innerHTML = `<span class="nd-lang-glyph" aria-hidden="true">${layersIcon()}</span><span class="nd-version-label"></span><span class="nd-lang-caret" aria-hidden="true">${chevronIcon()}</span>`;
+  button.querySelector<HTMLElement>(".nd-version-label")!.textContent = active.label;
+  host.appendChild(button);
+  host.hidden = false;
+  refs.versionButton = button;
+  return button;
+}
+
+/** Popover listing the documentation versions, with their status. */
+export function renderVersionMenu(
+  refs: ShellRefs,
+  versions: ResolvedVersion[],
+  active: ResolvedVersion | null,
+  onSelect: (version: ResolvedVersion) => void
+): void {
+  const host = refs.app.querySelector<HTMLElement>(".nd-version");
+  if (!host) return;
+  host.querySelector(".nd-lang-menu")?.remove();
+  const menu = document.createElement("div");
+  menu.className = "nd-lang-menu nd-version-menu";
+  menu.setAttribute("role", "listbox");
+  for (const version of versions) {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "nd-lang-option";
+    option.setAttribute("role", "option");
+    option.setAttribute("aria-selected", String(version === active));
+    option.textContent = version.label;
+    if (version.status !== "current") {
+      const tag = document.createElement("span");
+      tag.className = "nd-version-status";
+      tag.dataset.status = version.status;
+      tag.textContent = version.status;
+      option.appendChild(tag);
+    }
+    option.addEventListener("click", () => {
+      menu.remove();
+      onSelect(version);
+    });
+    menu.appendChild(option);
+  }
+  host.appendChild(menu);
+  const dismiss = (event: Event): void => {
+    if (!menu.contains(event.target as Node) && event.target !== refs.versionButton) {
       menu.remove();
       refs.app.removeEventListener("click", dismiss, true);
     }

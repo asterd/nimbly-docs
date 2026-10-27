@@ -10,7 +10,13 @@
  * Supported: ATX headings, paragraphs, bold/italic/strikethrough/inline code,
  * links, images, autolinks, fenced + indented code blocks, blockquotes,
  * ordered/unordered/task lists (nested), tables (GFM), horizontal rules,
- * and hard line breaks.
+ * hard line breaks, GitHub alerts (`> [!NOTE]`) and container directives
+ * (`:::tip`, `:::tabs`, `:::code-group`, …).
+ *
+ * Directives are the "MDX-lite" layer: declarative blocks that only ever emit
+ * allow-listed tags plus `data-*` hints. Interactivity (tab buttons, ARIA,
+ * icons) is added afterwards by trusted code in components.ts, so authored
+ * content can never carry markup or script.
  */
 import { escapeHtml, escapeAttr } from "./sanitize.js";
 import { highlight, normalizeLang } from "./highlight.js";
@@ -21,7 +27,30 @@ export interface MarkdownOptions {
   slug?: (text: string, used: Set<string>) => string;
   /** Highlight fenced code blocks. Default true. */
   highlightCode?: boolean;
+  /** @internal Heading ids already used, shared with nested renders so ids stay unique. */
+  usedIds?: Set<string>;
 }
+
+/** Callout kinds produced by `:::<kind>` directives and GitHub alerts. */
+export const CALLOUT_KINDS = ["note", "tip", "important", "warning", "danger"] as const;
+export type CalloutKind = (typeof CALLOUT_KINDS)[number];
+
+const CALLOUT_ALIASES: Record<string, CalloutKind> = {
+  note: "note", info: "note", tip: "tip", success: "tip", important: "important",
+  warning: "warning", caution: "warning", danger: "danger", error: "danger",
+};
+
+/** Readable tab labels for untitled blocks in a code group. */
+const LANG_LABELS: Record<string, string> = {
+  js: "JavaScript", javascript: "JavaScript", ts: "TypeScript", typescript: "TypeScript", py: "Python", python: "Python",
+  sh: "Shell", bash: "Bash", zsh: "Zsh", powershell: "PowerShell", ps1: "PowerShell", java: "Java", kotlin: "Kotlin",
+  go: "Go", rust: "Rust", rs: "Rust", cs: "C#", csharp: "C#", cpp: "C++", c: "C", php: "PHP", rb: "Ruby", ruby: "Ruby",
+  swift: "Swift", json: "JSON", yaml: "YAML", yml: "YAML", toml: "TOML", html: "HTML", css: "CSS", sql: "SQL", xml: "XML",
+};
+
+const FENCE = /^(\s*)(`{3,}|~{3,})\s*([\w+#-]*)\s*([^`]*?)\s*$/;
+const DIRECTIVE_OPEN = /^\s*:{3,}\s*([a-z][a-z0-9-]*)\s*(.*)$/i;
+const DIRECTIVE_CLOSE = /^\s*:{3,}\s*$/;
 
 export function slugify(text: string, used: Set<string>): string {
   let base = text
@@ -43,7 +72,8 @@ export function slugify(text: string, used: Set<string>): string {
 export function renderMarkdown(input: string, options: MarkdownOptions = {}): RenderedDoc {
   const slug = options.slug ?? slugify;
   const highlightCode = options.highlightCode !== false;
-  const used = new Set<string>();
+  const used = options.usedIds ?? new Set<string>();
+  const nested: MarkdownOptions = { ...options, usedIds: used };
   const toc: TocEntry[] = [];
   const textParts: string[] = [];
 
@@ -66,28 +96,23 @@ export function renderMarkdown(input: string, options: MarkdownOptions = {}): Re
       continue;
     }
 
-    // Fenced code block ``` or ~~~
-    const fence = /^(\s*)(`{3,}|~{3,})\s*([\w+#-]*)\s*$/.exec(line);
-    if (fence) {
-      const marker = fence[2]!;
-      const rawLang = (fence[3] || "").toLowerCase().trim();
-      const lang = normalizeLang(fence[3]);
-      const body: string[] = [];
-      i++;
-      while (i < lines.length && !new RegExp(`^\\s*${marker[0]}{${marker.length},}\\s*$`).test(lines[i]!)) {
-        body.push(lines[i]!);
-        i++;
-      }
-      i++; // consume closing fence
-      const code = body.join("\n");
-      pushText(code);
-      // Diagram blocks (e.g. mermaid) are kept verbatim and never highlighted;
-      // their language label is preserved so downstream renderers can find them.
-      const isDiagram = rawLang === "mermaid";
-      const inner = highlightCode && !isDiagram ? highlight(code, lang) : escapeHtml(code);
-      const labelLang = lang || (rawLang ? rawLang : "");
-      const langAttr = labelLang ? ` data-lang="${escapeAttr(labelLang)}"` : "";
-      html.push(`<pre><code${langAttr}>${inner}\n</code></pre>`);
+    // Fenced code block ``` or ~~~ (optionally with a title: ```js title="app.js" or ```js [app.js])
+    if (FENCE.test(line)) {
+      const block = parseFence(lines, i, highlightCode);
+      pushText(block.code);
+      html.push(block.html);
+      i += block.consumed;
+      continue;
+    }
+
+    // Container directive  :::name [Title] {attrs}  …  :::
+    const directive = DIRECTIVE_OPEN.exec(line);
+    if (directive) {
+      const { body, consumed } = collectDirective(lines, i);
+      const rendered = renderDirective(directive[1]!.toLowerCase(), directive[2] ?? "", body, nested, highlightCode);
+      if (rendered.text) textParts.push(rendered.text);
+      html.push(rendered.html);
+      i += consumed;
       continue;
     }
 
@@ -121,7 +146,16 @@ export function renderMarkdown(input: string, options: MarkdownOptions = {}): Re
         quote.push(lines[i]!.replace(/^\s*>\s?/, ""));
         i++;
       }
-      const inner = renderMarkdown(quote.join("\n"), options);
+      // GitHub alert syntax: > [!NOTE] / [!TIP] / [!IMPORTANT] / [!WARNING] / [!CAUTION]
+      const alert = /^\[!(note|tip|important|warning|caution)\]\s*(.*)$/i.exec(quote[0] ?? "");
+      if (alert) {
+        quote[0] = alert[2]!;
+        const inner = renderMarkdown(quote.join("\n"), nested);
+        textParts.push(inner.text);
+        html.push(calloutHtml(CALLOUT_ALIASES[alert[1]!.toLowerCase()]!, "", inner.html));
+        continue;
+      }
+      const inner = renderMarkdown(quote.join("\n"), nested);
       textParts.push(inner.text);
       html.push(`<blockquote>${inner.html}</blockquote>`);
       continue;
@@ -140,7 +174,7 @@ export function renderMarkdown(input: string, options: MarkdownOptions = {}): Re
 
     // Lists (ordered/unordered/task)
     if (/^\s*(?:[-*+]|\d+[.)])\s+/.test(line)) {
-      const { listHtml, consumed, text } = parseList(lines, i, options);
+      const { listHtml, consumed, text } = parseList(lines, i, nested);
       html.push(listHtml);
       pushText(text);
       i += consumed;
@@ -167,6 +201,7 @@ export function renderMarkdown(input: string, options: MarkdownOptions = {}): Re
       !/^\s*$/.test(lines[i]!) &&
       !/^(#{1,6})\s+/.test(lines[i]!) &&
       !/^\s*(?:`{3,}|~{3,})/.test(lines[i]!) &&
+      !/^\s*:{3,}/.test(lines[i]!) &&
       !/^\s*>/.test(lines[i]!) &&
       !/^\s*(?:[-*+]|\d+[.)])\s+/.test(lines[i]!) &&
       !/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(lines[i]!)
@@ -180,6 +215,153 @@ export function renderMarkdown(input: string, options: MarkdownOptions = {}): Re
   }
 
   return { html: html.join("\n"), toc, text: textParts.join(" ") };
+}
+
+interface FenceBlock {
+  html: string;
+  code: string;
+  /** Author title (`title="…"` or `[…]`), else the language label. */
+  label: string;
+  consumed: number;
+}
+
+/** Parse a fenced code block starting at `start` into highlighted, escaped HTML. */
+function parseFence(lines: string[], start: number, highlightCode: boolean): FenceBlock {
+  const fence = FENCE.exec(lines[start]!)!;
+  const marker = fence[2]!;
+  const rawLang = (fence[3] || "").toLowerCase().trim();
+  const lang = normalizeLang(fence[3]);
+  const meta = fence[4] || "";
+  const titleMatch = /title\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(meta) ?? /^\[([^\]]+)\]/.exec(meta);
+  const title = (titleMatch?.[1] ?? titleMatch?.[2] ?? "").trim();
+  const close = new RegExp(`^\\s*${marker[0]}{${marker.length},}\\s*$`);
+  const body: string[] = [];
+  let i = start + 1;
+  while (i < lines.length && !close.test(lines[i]!)) {
+    body.push(lines[i]!);
+    i++;
+  }
+  i++; // consume closing fence
+  const code = body.join("\n");
+  // Diagram blocks (e.g. mermaid) are kept verbatim and never highlighted;
+  // their language label is preserved so downstream renderers can find them.
+  const isDiagram = rawLang === "mermaid";
+  const inner = highlightCode && !isDiagram ? highlight(code, lang) : escapeHtml(code);
+  const labelLang = lang || (rawLang ? rawLang : "");
+  const langAttr = labelLang ? ` data-lang="${escapeAttr(labelLang)}"` : "";
+  const titleAttr = title ? ` data-title="${escapeAttr(title)}"` : "";
+  return {
+    html: `<pre><code${langAttr}${titleAttr}>${inner}\n</code></pre>`,
+    code,
+    label: title || LANG_LABELS[rawLang] || rawLang,
+    consumed: Math.min(i, lines.length) - start,
+  };
+}
+
+/**
+ * Collect a directive body up to its matching bare `:::` line. Nesting is
+ * tracked by depth (so colon counts do not matter) and fenced code is skipped,
+ * so a `:::` inside a code sample never closes the container.
+ */
+function collectDirective(lines: string[], start: number): { body: string[]; consumed: number } {
+  const body: string[] = [];
+  let depth = 0;
+  let fence: RegExp | null = null;
+  let i = start + 1;
+  for (; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (fence) {
+      if (fence.test(line)) fence = null;
+    } else if (FENCE.test(line)) {
+      const marker = FENCE.exec(line)![2]!;
+      fence = new RegExp(`^\\s*${marker[0]}{${marker.length},}\\s*$`);
+    } else if (DIRECTIVE_OPEN.test(line)) {
+      depth++;
+    } else if (DIRECTIVE_CLOSE.test(line)) {
+      if (depth === 0) return { body, consumed: i + 1 - start };
+      depth--;
+    }
+    body.push(line);
+  }
+  return { body, consumed: i - start };
+}
+
+/** Split a directive's opening-line argument into a title and `{key=value}` attributes. */
+function parseDirectiveArgs(raw: string): { title: string; attrs: Record<string, string> } {
+  const attrs: Record<string, string> = {};
+  let rest = raw.trim();
+  const braces = /\{([^}]*)\}\s*$/.exec(rest);
+  if (braces) {
+    rest = rest.slice(0, braces.index).trim();
+    const pair = /([a-z][\w-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"']+)))?/gi;
+    let m: RegExpExecArray | null;
+    while ((m = pair.exec(braces[1]!))) attrs[m[1]!.toLowerCase()] = m[2] ?? m[3] ?? m[4] ?? "";
+  }
+  const bracket = /^\[([^\]]*)\]/.exec(rest);
+  const title = (bracket ? bracket[1]! : rest).trim();
+  return { title, attrs };
+}
+
+function calloutHtml(kind: CalloutKind, title: string, inner: string): string {
+  // An empty title is filled with a localized label (Note, Tip, …) after sanitization.
+  return `<div class="nd-callout" data-kind="${kind}"><p class="nd-callout-title">${renderInline(title)}</p>${inner}</div>`;
+}
+
+/** Render one container directive. Unknown names degrade to their plain content. */
+function renderDirective(
+  name: string,
+  rawArgs: string,
+  body: string[],
+  options: MarkdownOptions,
+  highlightCode: boolean
+): { html: string; text: string } {
+  const { title, attrs } = parseDirectiveArgs(rawArgs);
+  const syncAttr = (fallback: string) => {
+    const key = attrs.sync ?? fallback;
+    return key && key !== "none" ? ` data-sync="${escapeAttr(key)}"` : "";
+  };
+
+  if (name === "code-group") {
+    const panels: string[] = [];
+    const texts: string[] = [];
+    for (let i = 0; i < body.length; ) {
+      if (!FENCE.test(body[i]!)) { i++; continue; }
+      const block = parseFence(body, i, highlightCode);
+      texts.push(block.code);
+      const label = block.label || `${panels.length + 1}`;
+      panels.push(`<div class="nd-tab-panel" data-label="${escapeAttr(label)}">${block.html}</div>`);
+      i += block.consumed;
+    }
+    return { html: `<div class="nd-tabs nd-code-group"${syncAttr("code")}>${panels.join("")}</div>`, text: texts.join(" ") };
+  }
+
+  const inner = renderMarkdown(body.join("\n"), options);
+  const text = [stripInline(title), inner.text].filter(Boolean).join(" ");
+  const kind = CALLOUT_ALIASES[name];
+  if (kind) return { html: calloutHtml(kind, title, inner.html), text };
+
+  switch (name) {
+    case "details":
+      return {
+        html: `<details class="nd-details"${"open" in attrs ? " open" : ""}><summary>${renderInline(title || "Details")}</summary>${inner.html}</details>`,
+        text,
+      };
+    case "tabs":
+      return { html: `<div class="nd-tabs"${syncAttr("")}>${inner.html}</div>`, text };
+    case "tab":
+      return { html: `<div class="nd-tab-panel" data-label="${escapeAttr(stripInline(title) || "Tab")}">${inner.html}</div>`, text };
+    case "steps":
+      return { html: `<div class="nd-steps">${inner.html}</div>`, text };
+    case "cards":
+      return { html: `<div class="nd-cards">${inner.html}</div>`, text };
+    case "card": {
+      const label = renderInline(title);
+      const heading = attrs.href ? `<a href="${escapeAttr(attrs.href)}">${label}</a>` : label;
+      return { html: `<div class="nd-card"><p class="nd-card-title">${heading}</p>${inner.html}</div>`, text };
+    }
+    default:
+      return { html: `<div>${inner.html}</div>`, text };
+  }
 }
 
 function parseTable(lines: string[], start: number): { tableHtml: string; consumed: number; text: string } {

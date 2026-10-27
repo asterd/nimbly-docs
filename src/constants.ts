@@ -12,7 +12,15 @@ export const THEME_STORAGE_KEY = "nimbly-docs:theme";
 export const APPEARANCE_STORAGE_KEY = "nimbly-docs:appearance";
 
 /** Palettes shipped in the bundle. Every palette defines both a light and a dark variant. */
-export const BUILT_IN_THEMES = ["nimbus", "midnight", "paper", "sabbia"] as const;
+export const BUILT_IN_THEMES = ["nimbly", "nimbus", "midnight", "paper", "sabbia", "material", "stellar", "evergreen"] as const;
+
+/** The palette used when nothing else is requested or a name is unknown. */
+export const DEFAULT_THEME = "nimbly";
+
+/** Display names for built-in palettes; other names are title-cased. */
+export const THEME_LABELS: Record<string, string> = {
+  nimbly: "Nimbly Classic",
+};
 
 /** The three appearance states exposed by the header control. */
 export const APPEARANCES = ["light", "dark", "auto"] as const;
@@ -43,6 +51,12 @@ export const LIMITS = {
   /** Number of Markdown pages kept in the in-memory LRU. */
   pageCacheSize: 10,
 };
+
+/** namespaced localStorage prefix for synced tab choices (`:::tabs{sync=…}`). */
+export const TABS_STATE_PREFIX = "nimbly-docs:tabs:";
+
+/** Regex enforcing safe documentation version ids (used in `#/@<id>/…` routes). */
+export const VERSION_ID_PATTERN = /^[a-z0-9][a-z0-9._-]{0,31}$/i;
 
 /** Regex enforcing safe, stable page/section ids. */
 export const ID_PATTERN = /^[a-z0-9][a-z0-9/_-]{0,127}$/;

@@ -97,7 +97,7 @@ Con questa regola, `source: "./guide/start.md"` e sempre relativo alla posizione
 | Attributo | Default | Significato |
 |---|---:|---|
 | `manifest` | `./index.json` | URL relativo o assoluto del manifest |
-| `theme` | `auto` | `light`, `dark`, `auto` o nome di tema nel manifest |
+| `theme` | tema del manifest, poi `nimbly` | Nome di tema built-in o del manifest; `light`, `dark`, `auto` restano alias legacy dell'aspetto |
 | `locale` | lingua documento | Lingua UI e fallback dei testi |
 | `router` | `hash` | In v1 supportare solo `hash` |
 | `search` | `on` | Abilita la ricerca client-side se il manifest lo consente |
@@ -108,10 +108,10 @@ Con questa regola, `source: "./guide/start.md"` e sempre relativo alla posizione
 Eventi DOM:
 
 - `docs-ready`: manifest valido e shell renderizzato;
-- `docs-navigate`: pagina resa con dettaglio `{ id, url }`;
+- `docs-navigate`: pagina resa con dettaglio `{ id, url, version }` (`version` e l'id della versione attiva, `null` se la documentazione non e versionata);
 - `docs-error`: dettaglio `{ code, message, cause }` senza leak di informazioni sensibili.
 
-Metodi pubblici opzionali: `navigate(id)`, `reload()`, `setTheme(name)`, `openSearch()`.
+Metodi pubblici opzionali: `navigate(id)`, `reload()`, `setTheme(name)`, `setVersion(id)`, `openSearch()`.
 
 ### Menu laterale e navigazione
 
@@ -129,13 +129,15 @@ Il routing standard e hash-based:
 /docs/docs.html#/introduzione#installazione
 ```
 
-Il primo hash identifica la pagina. L'ancora Markdown diventa un secondo frammento: la libreria interpreta `#/pagina#ancora`. Deve aggiornare `aria-current="page"`, titolo documento e focus al contenuto principale a ogni navigazione.
+Il primo hash identifica la pagina. L'ancora Markdown diventa un secondo frammento: la libreria interpreta `#/pagina#ancora`. Se la documentazione e versionata, le versioni diverse da quella predefinita aggiungono un segmento `@<versione>/` subito dopo `#/` (es. `#/@1.x/introduzione#installazione`). Gli id pagina non possono iniziare con `@`, quindi la grammatica non e ambigua. Deve aggiornare `aria-current="page"`, titolo documento e focus al contenuto principale a ogni navigazione.
 
 Regole:
 
 - route vuota: prima pagina marcata `home`, altrimenti prima pagina del manifest;
 - id sconosciuto: pagina 404 interna, senza richiesta di file;
 - link Markdown relativi a un altro `.md`: se il target corrisponde a una pagina nota, convertirlo nella route interna;
+- versione sconosciuta: si usa la versione predefinita;
+- cambio versione dal selettore: si mantiene la pagina corrente se esiste nella versione di destinazione, altrimenti si apre la home di quella versione;
 - link esterni: `target="_blank"`, `rel="noopener noreferrer"` solo se cosi definito dal contenuto; altrimenti lasciare la normale navigazione.
 
 ## 6 Specifica del manifest v1
@@ -184,6 +186,34 @@ Vincoli di validazione:
 
 Per evitare ambiguita, `source` non deve contenere query di autenticazione o token. L'accesso protetto appartiene al reverse proxy/SSO dell'applicazione.
 
+### Versioni della documentazione
+
+Un software puo avere piu versioni con documentazione diversa. Ogni versione e un albero di documentazione completo e indipendente (manifest, pagine, lingue, tema). Il **manifest radice**, cioe quello indicato dall'attributo `manifest`, elenca le versioni:
+
+```json
+"versions": [
+  { "id": "2.x", "label": "v2.x (latest)", "status": "current" },
+  { "id": "next", "label": "Next", "manifest": "./versions/next/index.json", "status": "unreleased" },
+  { "id": "1.x", "label": "v1.x", "manifest": "./versions/1.x/index.json", "status": "legacy" }
+]
+```
+
+Vincoli:
+
+- `id` obbligatorio e univoco, pattern `^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$`;
+- esattamente una voce senza `manifest` (o con `manifest` che risolve al manifest radice): e la versione descritta dal manifest radice, con route senza prefisso `@`;
+- `manifest` risolto rispetto al manifest radice, solo `http:`/`https:` senza credenziali;
+- `status` in `current` (default), `legacy`, `unreleased`;
+- l'elenco `versions` e letto solo dal manifest radice: un eventuale elenco dentro un manifest di versione viene ignorato.
+
+Comportamento visivo:
+
+- selettore di versione nell'header, accanto al brand, visibile con almeno due versioni; le versioni non correnti sono etichettate `legacy` o `unreleased`;
+- banner localizzato in testa al contenuto per le versioni `legacy` (non piu mantenuta) e `unreleased` (non ancora rilasciata), con link alla stessa pagina nella versione predefinita;
+- ricerca, sidebar, lingue e tema predefinito seguono la versione attiva.
+
+Il comando `nimbly-docs-version <id>` (`scripts/snapshot-version.mjs`) congela la documentazione corrente in `versions/<id>/` (manifest, pagine e immagini, mai il bundle) e la registra nel manifest radice.
+
 ## 7 Markdown e sicurezza
 
 Il viewer deve includere nel bundle un parser Markdown deterministico e un sanitizzatore HTML. La pipeline e obbligatoria:
@@ -202,11 +232,31 @@ Configurazione sicura predefinita:
 - SVG inline disabilitato per default;
 - nessuna estensione/plugin eseguibile caricata dal manifest.
 
+### Componenti interattivi dichiarativi ("MDX-lite")
+
+MDX non e supportato: compila JSX in JavaScript eseguito a runtime, in contrasto con i vincoli di questa sezione (niente HTML raw, niente script dai contenuti, sanitizzazione allow-list, zero dipendenze, compatibilita con CSP restrittive). Gli stessi componenti si ottengono con **direttive Markdown**:
+
+```text
+:::nome Titolo opzionale {chiave=valore}
+contenuto Markdown, anche con direttive annidate
+:::
+```
+
+- La chiusura e una riga `:::` nuda; l'annidamento si risolve per profondita, non contando i due punti. Le righe `:::` dentro blocchi di codice recintati sono ignorate.
+- Direttive supportate: callout `note`, `tip`, `important`, `warning`, `danger` (alias `info`, `success`, `caution`, `error`); `tabs` e `tab`; `code-group`; `steps`; `cards` e `card` (`href` opzionale); `details` (`open` opzionale). I nomi sconosciuti degradano al solo contenuto.
+- Gli alert GitHub (`> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`) producono gli stessi callout.
+- I blocchi di codice accettano un titolo: ```` ```js title="app.js" ```` oppure ```` ```js [app.js] ````.
+- `code-group` trasforma blocchi di codice consecutivi in tab, etichettati dal titolo o dal linguaggio. I gruppi con la stessa chiave `sync` (predefinita `code` per i code group, opzionale per i tab) cambiano insieme e la scelta viene salvata in `localStorage` (`nimbly-docs:tabs:<chiave>`): e lo switch di linguaggio degli esempi.
+
+Sicurezza: il parser emette solo tag gia in allow-list (`div`, `p`, `details`, `summary`, `pre`, `code`) e gli attributi `data-kind`, `data-label`, `data-sync`, `data-title`. Bottoni, ruoli ARIA (pattern WAI-ARIA tabs, con frecce, Home ed End) e icone sono creati dal viewer **dopo** la sanitizzazione, con valori autoriali inseriti solo come testo o valori di attributo. Gli `href` delle card passano dalla stessa validazione URL dei link.
+
+Fuori ambito: playground eseguibili. Se introdotti, dovranno essere un modulo opzionale caricato on demand (come il motore dei diagrammi), eseguito in un `iframe sandbox="allow-scripts"` senza `allow-same-origin`, creato dal viewer e mai dal Markdown.
+
 I link e asset relativi dentro un Markdown si risolvono contro l'URL del Markdown corrente. Le immagini devono avere `loading="lazy"`, `decoding="async"` e testo alternativo; la libreria evidenzia in console immagini prive di alt text in modalita sviluppo.
 
 ## 8 Tema e personalizzazione
 
-Il tema e un set di token CSS, non CSS arbitrario nel manifest. Il bundle offre `light`, `dark`, `auto` e una variante neutra accessibile.
+Il tema e un set di token CSS, non CSS arbitrario nel manifest. Tema (palette e skin) e aspetto (`light`, `dark`, `auto`) sono assi indipendenti: ogni tema definisce sia la variante chiara sia quella scura.
 
 ```css
 docs-viewer {
@@ -221,7 +271,29 @@ docs-viewer {
 
 Un tema manifest puo sovrascrivere soltanto token definiti e valori CSS semplici validati (colore, lunghezza, font stack senza URL). Il viewer rispetta `prefers-color-scheme`, `prefers-reduced-motion` e contrasto minimo WCAG AA. Non carica Google Fonts o risorse remote implicite.
 
-Temi inclusi: `nimbus` (neutro), `midnight` (dark), `paper` (alto contrasto) e `auto`. Ogni tema mantiene la stessa struttura e semantica; cambiano solamente token e densita tipografica. Il cambio tema e immediato, non richiede ricaricare il Markdown e viene memorizzato solo in `localStorage` sotto una chiave namespaced, se disponibile.
+Un tema agisce su due livelli:
+
+- **palette**: colori di sfondo, superfici, testo, brand, accento, bordi, codice, focus e callout;
+- **skin**: token strutturali (`font-size`, `line-height`, `heading-weight`, `header-bg`, `header-text`, `header-muted`, `header-border`, `sidebar-bg`, `nav-active-bg`, `nav-active-text`) e poche regole CSS mirate per tema. Un tema custom eredita palette e skin del proprio `base`.
+
+Temi inclusi:
+
+| Nome | Carattere |
+|---|---|
+| `nimbly` | **Nimbly Classic**, predefinito |
+| `nimbus` | neutro blu |
+| `midnight` | navy profondo |
+| `paper` | editoriale ad alto contrasto |
+| `sabbia` | caldo, sabbia/tortora |
+| `material` | ispirato a Material for MkDocs: app bar colorata, Roboto, titoli leggeri |
+| `stellar` | ispirato a Starlight (Astro): accento viola, voce di navigazione attiva piena |
+| `evergreen` | ispirato al tema classic di Docusaurus: navbar bianca, brand verde |
+
+I temi "ispirati a" ricreano l'aspetto con i token di Nimbly, senza copiare codice, font o asset di marchio, e senza caricare font remoti: usano stack di sistema che iniziano con il font originale se gia installato.
+
+**Nimbly Classic** e progettato per riconoscibilita e leggibilita su ogni dispositivo: corpo 16px, interlinea 1.7, misura 72ch (vicina ai 45–75 caratteri per riga raccomandati), testo `#16201f` su `#f8faf9` (circa 15,9:1, evitando nero puro su bianco puro), variante scura `#e3ece9` su `#0c1312` (circa 15,6:1), testo secondario e link sempre sopra WCAG AA (link almeno 7,5:1 e sottolineati), brand teal `#0b7a70` con accento ambra `#c2410c` usato anche per l'anello di focus. Font nativi: SF / Segoe UI Variable / Roboto, poi Inter; codice con `ui-monospace`, SF Mono, Cascadia Code e JetBrains Mono. Elementi distintivi: una barra teal→ambra in cima all'header e sotto il titolo di pagina, e il bordo teal sulla voce attiva della sidebar.
+
+Ogni tema mantiene la stessa struttura semantica. Il cambio tema e immediato, non richiede ricaricare il Markdown e viene memorizzato solo in `localStorage` sotto una chiave namespaced, se disponibile.
 
 ## 9 Prestazioni e caching
 
@@ -313,7 +385,9 @@ Test automatici minimi:
 - sanitizzazione contro XSS, URL ostili e SVG/script inline;
 - link e immagini relativi; pagine assenti e manifest malformati;
 - navigazione rapida con annullamento fetch;
-- tema chiaro/scuro, viewport mobile e tastiera;
+- tema chiaro/scuro per ogni tema incluso, viewport mobile e tastiera;
+- direttive: annidamento, `:::` dentro codice recintato, escape di titoli e attributi, sincronizzazione dei tab;
+- versioni: validazione del manifest, route `@versione`, fallback alla home e banner;
 - test E2E su server statico reale con cache e MIME type corretti;
 - scansione dipendenze, dimensione bundle e Lighthouse/accessibilita nel CI.
 

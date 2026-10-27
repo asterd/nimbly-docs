@@ -26,6 +26,7 @@
     "links": { "type": "array", "items": { "$ref": "#/$defs/link" } },
     "apiReference": { "$ref": "#/$defs/apiReference" },
     "languages": { "type": "array", "items": { "$ref": "#/$defs/language" } },
+    "versions": { "type": "array", "items": { "$ref": "#/$defs/docVersion" } },
     "features": { "$ref": "#/$defs/features" },
     "themes": { "type": "array", "items": { "$ref": "#/$defs/theme" } },
     "sections": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/section" } }
@@ -121,12 +122,23 @@
       },
       "additionalProperties": true
     },
+    "docVersion": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$" },
+        "label": { "type": "string" },
+        "manifest": { "type": "string" },
+        "status": { "enum": ["current", "legacy", "unreleased"] }
+      },
+      "additionalProperties": false
+    },
     "theme": {
       "type": "object",
       "required": ["name"],
       "properties": {
         "name": { "type": "string" },
-        "base": { "enum": ["nimbus", "midnight", "paper", "sabbia"] },
+        "base": { "enum": ["nimbly", "nimbus", "midnight", "paper", "sabbia", "material", "stellar", "evergreen"] },
         "light": { "type": "object", "additionalProperties": { "type": "string" } },
         "dark": { "type": "object", "additionalProperties": { "type": "string" } }
       },

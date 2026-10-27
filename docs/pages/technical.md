@@ -6,11 +6,11 @@ Nimbly Docs is one self-contained ESM bundle with no runtime dependencies. These
 
 | Metric | Value |
 | --- | --- |
-| Raw (minified) | ~67 KB |
-| **Gzip** | **~20 KB** |
-| Brotli | ~18 KB |
+| Raw (minified) | ~117 KB |
+| **Gzip** | **~32 KB** |
+| Brotli | ~28 KB |
 | Gzip budget | 120 KB |
-| Headroom | ~100 KB |
+| Headroom | ~88 KB |
 
 The gzip figure includes the Markdown parser, HTML sanitizer, search, UI shell, icons, all themes and the compact syntax highlighter. Optional Mermaid support is **not** counted here: it is imported lazily and only when enabled and used.
 

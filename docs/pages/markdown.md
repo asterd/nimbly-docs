@@ -40,6 +40,12 @@ viewer?.addEventListener("docs-navigate", ({ detail }) => {
 
 Use the copy control on a code block. It uses the Async Clipboard API with a narrow DOM fallback.
 
+Add a title after the language to show a header bar, with either `title="…"` or `[…]`:
+
+```bash title="Install"
+npm install nimbly-docs
+```
+
 ## Tables
 
 | Markdown construct | Rendered semantic element |
@@ -49,8 +55,13 @@ Use the copy control on a code block. It uses the Async Clipboard API with a nar
 | Code | `pre`, `code` |
 | Tables | `table`, `thead`, `tbody`, `th`, `td` |
 
-## Callouts
+## Blockquotes and callouts
 
-> Blockquotes are useful for important implementation notes. They have no special runtime behavior and cannot execute code.
+> Blockquotes are useful for quotations and asides. They have no special runtime behavior and cannot execute code.
+
+For highlighted notes, use a callout directive (`:::tip`) or a GitHub alert (`> [!NOTE]`):
+
+> [!TIP]
+> Tabs, code groups, steps and cards are covered in [Interactive components](./components.md).
 
 See [Security model](./security.md) for the deliberate exclusions from the Markdown format.

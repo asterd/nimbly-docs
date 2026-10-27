@@ -107,7 +107,34 @@ export interface ManifestTheme {
   dark?: ManifestThemeTokens;
 }
 
-export type BuiltInTheme = "nimbus" | "midnight" | "paper" | "sabbia";
+export type BuiltInTheme = "nimbly" | "nimbus" | "midnight" | "paper" | "sabbia" | "material" | "stellar" | "evergreen";
+
+/** Lifecycle status of a documentation version, used for the selector and banners. */
+export type VersionStatus = "current" | "legacy" | "unreleased";
+
+/** A documentation version declared by the root manifest. */
+export interface ManifestVersion {
+  /** Stable id used in routes (`#/@<id>/page`). */
+  id: string;
+  /** Label shown in the version selector, e.g. "v2.x". */
+  label?: string;
+  /**
+   * Manifest of this version, relative to the root manifest. Omit it (or point
+   * it at the root manifest) for the version the root manifest itself describes.
+   */
+  manifest?: string;
+  status?: VersionStatus;
+}
+
+/** A validated version entry with an absolute manifest URL. */
+export interface ResolvedVersion {
+  id: string;
+  label: string;
+  manifestUrl: string;
+  status: VersionStatus;
+  /** True for the version described by the root manifest (routes carry no `@id` prefix). */
+  isDefault: boolean;
+}
 
 /** The raw manifest as authored (before normalization). */
 export interface Manifest {
@@ -141,6 +168,8 @@ export interface Manifest {
   apiReference?: ManifestApiReference;
   /** Available UI/content languages. The first entry is the default. */
   languages?: ManifestLanguage[];
+  /** Documentation versions. Only read from the root manifest. */
+  versions?: ManifestVersion[];
   features?: ManifestFeatures;
   themes?: ManifestTheme[];
   sections: ManifestSection[];
@@ -198,6 +227,8 @@ export interface ResolvedManifest {
   languages: ManifestLanguage[];
   /** Default language code (first declared, else manifest `language`). */
   defaultLanguage: string;
+  /** Validated documentation versions; empty when the docs are unversioned. */
+  versions: ResolvedVersion[];
 }
 
 /** Structured error emitted through the `docs-error` event. */

@@ -30,7 +30,7 @@ The manifest is the only project-level configuration. Its explicit, validated sh
 | `manifest` | `./index.json` | Relative or absolute HTTP(S) URL |
 | `title` | Manifest title, then `Nimbly Docs` | Header application name override |
 | `logo` | Built-in glyph | Optional logo URL; falls back safely to the built-in glyph |
-| `theme` | Manifest theme, then `nimbus` | Palette: built-in or manifest custom theme |
+| `theme` | Manifest theme, then `nimbly` | Palette: built-in or manifest custom theme |
 | `appearance` | manifest `appearance`, then `auto` | `light`, `dark`, or `auto`; affects scheme without swapping palette |
 | `locale` | manifest language | UI locale hint |
 | `router` | `hash` | `hash` in v1 |

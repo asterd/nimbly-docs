@@ -16,8 +16,10 @@ import type {
   ManifestTheme,
   ResolvedManifest,
   ResolvedPage,
+  ResolvedVersion,
+  VersionStatus,
 } from "./types.js";
-import { BUILT_IN_THEMES, ID_PATTERN, LIMITS, MANIFEST_MAJOR } from "./constants.js";
+import { BUILT_IN_THEMES, ID_PATTERN, LIMITS, MANIFEST_MAJOR, VERSION_ID_PATTERN } from "./constants.js";
 
 export class ManifestError extends Error {
   constructor(message: string) {
@@ -353,6 +355,43 @@ function validateLanguages(input: unknown): ManifestLanguage[] {
   return out;
 }
 
+const VERSION_STATUSES: readonly VersionStatus[] = ["current", "legacy", "unreleased"];
+
+/**
+ * Validate documentation versions. Each entry points at its own manifest; the
+ * entry without one (or pointing back at this manifest) is the default version,
+ * whose routes carry no `@id` prefix. Version manifests must be http(s) URLs
+ * without credentials, like page sources.
+ */
+function validateVersions(input: unknown, manifestUrl: string): ResolvedVersion[] {
+  if (input === undefined) return [];
+  if (!Array.isArray(input)) throw new ManifestError(`"versions" must be an array`);
+  const out: ResolvedVersion[] = [];
+  const seen = new Set<string>();
+  for (const raw of input) {
+    if (!isPlainObject(raw)) throw new ManifestError("each version must be an object");
+    const id = requireString(raw.id, "version.id");
+    if (!VERSION_ID_PATTERN.test(id)) throw new ManifestError(`version id "${id}" is invalid`);
+    if (seen.has(id)) throw new ManifestError(`duplicate version id "${id}"`);
+    seen.add(id);
+    let url = manifestUrl;
+    if (raw.manifest !== undefined) {
+      const target = new URL(requireString(raw.manifest, "version.manifest"), manifestUrl);
+      if ((target.protocol !== "https:" && target.protocol !== "http:") || target.username || target.password) {
+        throw new ManifestError(`version "${id}" manifest URL is not allowed`);
+      }
+      url = target.href;
+    }
+    const label = typeof raw.label === "string" && raw.label.trim() ? raw.label.trim() : id;
+    const status = VERSION_STATUSES.includes(raw.status as VersionStatus) ? (raw.status as VersionStatus) : "current";
+    out.push({ id, label, manifestUrl: url, status, isDefault: url === manifestUrl });
+  }
+  if (out.length > 0 && out.filter((v) => v.isDefault).length !== 1) {
+    throw new ManifestError(`"versions" must contain exactly one entry for this manifest (no "manifest" field)`);
+  }
+  return out;
+}
+
 /**
  * Validate and normalize a raw manifest object fetched from `manifestUrl`.
  * Throws {@link ManifestError} on any structural or security violation.
@@ -419,6 +458,7 @@ export function normalizeManifest(raw: unknown, manifestUrl: string, locale = ""
     links: validateLinks(raw.links),
     languages,
     defaultLanguage: defaultLocale,
+    versions: validateVersions(raw.versions, manifestUrl),
     chooseThemes: false,
     themeChoices: [],
   };

@@ -2,7 +2,7 @@
 
 **Nimbly Docs** is an embeddable Web Component for local Markdown documentation. It delivers the familiar Docsify experience—nested navigation, search, themes, page TOC and deep links—without a framework, a remote plugin system, or runtime dependencies.
 
-> This demo uses the **Sabbia** theme: a calm warm-sand palette inspired by Shootly's visual language.
+> This site uses **Nimbly Classic**, the new default theme, designed for long-form reading on any device. Try the others from the palette button in the header, and switch to the previous release's docs from the version selector next to the logo.
 
 ## Why this exists
 
@@ -21,13 +21,15 @@ Documentation is often shipped with an application, but modern documentation sta
 | Hash routing | ✓ | Deep links, refresh, browser history |
 | Local search | ✓ | Built progressively while pages are read |
 | Markdown | ✓ | Raw HTML is disabled and output is sanitized |
-| Themes | ✓ | `nimbus`, `midnight`, `paper`, `sabbia`, and validated custom tokens |
+| Themes | ✓ | Eight built-ins (`nimbly` by default, plus Material-, Starlight- and Docusaurus-inspired skins) and validated custom tokens |
+| Interactive components | ✓ | Callouts, tabs, code groups with a synced language switch, steps, cards, using Markdown directives instead of MDX |
+| Versioned docs | ✓ | Version selector, legacy/unreleased banners, `#/@version/page` deep links |
 | Code blocks | ✓ | Compact highlighting and copy controls |
 | Remote plugins | ✗ | Intentionally never loaded from a manifest |
 
 ## Try it
 
-Use the sidebar, press <kbd>⌘</kbd>+<kbd>K</kbd> (or <kbd>Ctrl</kbd>+<kbd>K</kbd>) for search, and use the appearance button in the top right to cycle themes. Then visit [installation](./installation.md) or inspect the [security model](./security.md).
+Use the sidebar, press `⌘K` (or `Ctrl K`) for search, and use the appearance button in the top right to switch between light, dark and auto. Then visit [installation](./installation.md) or inspect the [security model](./security.md).
 
 ## A safe by-default document
 
