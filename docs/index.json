@@ -9,22 +9,68 @@
   "home": "welcome",
   "appearance": "light",
   "chooseThemes": true,
-  "backLink": { "url": "https://github.com/asterd/nimbly-docs", "label": { "en": "Back to app", "it": "Torna all'app" } },
+  "backLink": {
+    "url": "https://github.com/asterd/nimbly-docs",
+    "label": {
+      "en": "Back to app",
+      "it": "Torna all'app"
+    }
+  },
   "footer": "Nimbly Docs · zero runtime dependencies · no telemetry",
   "links": [
-    { "type": "github", "url": "https://github.com/asterd/nimbly-docs" },
-    { "type": "linkedin", "url": "https://www.linkedin.com/in/dario-d-urzo-470b2024", "label": "LinkedIn" },
-    { "type": "external", "url": "https://github.com/obsidianmd/pele", "label": "Pele diagrams" }
+    {
+      "type": "github",
+      "url": "https://github.com/asterd/nimbly-docs"
+    },
+    {
+      "type": "linkedin",
+      "url": "https://www.linkedin.com/in/dario-d-urzo-470b2024",
+      "label": "LinkedIn"
+    },
+    {
+      "type": "external",
+      "url": "https://github.com/obsidianmd/pele",
+      "label": "Pele diagrams"
+    }
   ],
-  "apiReference": { "url": "https://petstore.swagger.io/", "label": "API reference" },
+  "apiReference": {
+    "url": "https://petstore.swagger.io/",
+    "label": "API reference"
+  },
   "languages": [
-    { "code": "en", "label": "English" },
-    { "code": "it", "label": "Italiano" }
+    {
+      "code": "en",
+      "label": "English"
+    },
+    {
+      "code": "it",
+      "label": "Italiano"
+    }
   ],
   "versions": [
-    { "id": "0.0.7", "label": "v0.0.7 (latest)", "status": "current" },
-    { "id": "0.0.6", "label": "v0.0.6", "manifest": "./versions/0.0.6/index.json", "status": "legacy" },
-    { "id": "0.0.5", "label": "v0.0.5", "manifest": "./versions/0.0.5/index.json", "status": "legacy" }
+    {
+      "id": "0.0.8",
+      "label": "v0.0.8 (latest)",
+      "status": "current"
+    },
+    {
+      "id": "0.0.7",
+      "label": "v0.0.7",
+      "manifest": "./versions/0.0.7/index.json",
+      "status": "legacy"
+    },
+    {
+      "id": "0.0.6",
+      "label": "v0.0.6",
+      "manifest": "./versions/0.0.6/index.json",
+      "status": "legacy"
+    },
+    {
+      "id": "0.0.5",
+      "label": "v0.0.5",
+      "manifest": "./versions/0.0.5/index.json",
+      "status": "legacy"
+    }
   ],
   "features": {
     "search": true,
@@ -32,7 +78,14 @@
     "copyCode": true,
     "previousNext": true,
     "breadcrumbs": true,
-    "sidebar": { "collapsible": true, "defaultExpanded": ["getting-started"] }
+    "sidebar": {
+      "collapsible": true,
+      "defaultExpanded": [
+        "release-demo",
+        "getting-started"
+      ]
+    },
+    "sourceDownload": true
   },
   "themes": [
     {
@@ -50,47 +103,305 @@
   ],
   "sections": [
     {
-      "id": "getting-started",
-      "title": { "en": "Getting started", "it": "Per iniziare" },
+      "id": "release-demo",
+      "title": {
+        "en": "What’s new in 0.0.8",
+        "it": "Novità 0.0.8"
+      },
+      "attachments": [
+        "demo-context"
+      ],
+      "revision": {
+        "branch": "demo/catalog",
+        "branchTone": "warning",
+        "updatedAt": "2026-11-13",
+        "status": {
+          "label": {
+            "en": "Demo data",
+            "it": "Dati dimostrativi"
+          },
+          "tone": "info"
+        }
+      },
       "pages": [
-        { "id": "welcome", "title": { "en": "Welcome", "it": "Benvenuto" }, "source": "welcome.md", "description": "What Nimbly Docs is and why it exists." },
-        { "id": "installation", "title": "Installation", "source": "installation.md" },
-        { "id": "configuration", "title": "Configuration", "source": "configuration.md" },
-        { "id": "manifest", "title": "Manifest reference", "source": "manifest.md" },
-        { "id": "scaffold", "title": "Start a new project", "source": "scaffold.md", "badge": "cli" }
+        {
+          "id": "feature-tour",
+          "title": {
+            "en": "Try the new features",
+            "it": "Prova le nuove funzionalità"
+          },
+          "source": "feature-tour.md",
+          "badge": {
+            "label": "0.0.8",
+            "tone": "success"
+          },
+          "revision": {
+            "source": "docs/pages/feature-tour.md"
+          },
+          "attachments": [
+            {
+              "label": {
+                "en": "Review checklist",
+                "it": "Checklist di revisione"
+              },
+              "url": "./downloads/review-checklist.md",
+              "group": {
+                "en": "Review",
+                "it": "Revisione"
+              },
+              "mediaType": "text/markdown",
+              "bytes": 597
+            }
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "id": "demo-workspace",
+          "title": {
+            "en": "Sample workspace",
+            "it": "Workspace di esempio"
+          },
+          "sections": [
+            {
+              "id": "demo-data",
+              "title": {
+                "en": "Data platform",
+                "it": "Piattaforma dati"
+              },
+              "pages": [
+                {
+                  "id": "demo-database",
+                  "title": {
+                    "en": "Database overview",
+                    "it": "Panoramica database"
+                  },
+                  "source": "demo-database.md",
+                  "badge": {
+                    "label": "Preview",
+                    "tone": "warning"
+                  },
+                  "revision": {
+                    "source": "docs/downloads/demo-schema.sql"
+                  },
+                  "attachments": [
+                    {
+                      "label": {
+                        "en": "Database schema",
+                        "it": "Schema database"
+                      },
+                      "url": "./downloads/demo-schema.sql",
+                      "group": "Database",
+                      "mediaType": "application/sql",
+                      "bytes": 314
+                    }
+                  ]
+                }
+              ],
+              "attachments": [
+                {
+                  "label": {
+                    "en": "Database schema",
+                    "it": "Schema database"
+                  },
+                  "url": "./downloads/demo-schema.sql",
+                  "group": "Database",
+                  "mediaType": "application/sql",
+                  "bytes": 314
+                }
+              ],
+              "sections": [
+                {
+                  "id": "demo-postgres",
+                  "title": "PostgreSQL",
+                  "collapsed": true,
+                  "sections": [
+                    {
+                      "id": "demo-tables",
+                      "title": {
+                        "en": "Tables",
+                        "it": "Tabelle"
+                      },
+                      "collapsed": true,
+                      "pages": [
+                        {
+                          "id": "demo-users",
+                          "title": {
+                            "en": "Users table",
+                            "it": "Tabella utenti"
+                          },
+                          "source": "demo-users.md",
+                          "badge": {
+                            "label": "SQL",
+                            "tone": "info"
+                          },
+                          "revision": {
+                            "branch": "demo/review",
+                            "branchTone": "success",
+                            "source": "docs/downloads/demo-schema.sql",
+                            "status": {
+                              "label": {
+                                "en": "Example reviewed",
+                                "it": "Esempio revisionato"
+                              },
+                              "tone": "success"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "getting-started",
+      "title": {
+        "en": "Getting started",
+        "it": "Per iniziare"
+      },
+      "pages": [
+        {
+          "id": "welcome",
+          "title": {
+            "en": "Welcome",
+            "it": "Benvenuto"
+          },
+          "source": "welcome.md",
+          "description": "What Nimbly Docs is and why it exists."
+        },
+        {
+          "id": "installation",
+          "title": "Installation",
+          "source": "installation.md"
+        },
+        {
+          "id": "configuration",
+          "title": "Configuration",
+          "source": "configuration.md"
+        },
+        {
+          "id": "manifest",
+          "title": "Manifest reference",
+          "source": "manifest.md"
+        },
+        {
+          "id": "scaffold",
+          "title": "Start a new project",
+          "source": "scaffold.md",
+          "badge": "cli"
+        },
+        {
+          "id": "downloads",
+          "title": "Downloads and metadata",
+          "source": "downloads.md"
+        }
       ]
     },
     {
       "id": "guides",
-      "title": { "en": "Guides", "it": "Guide" },
+      "title": {
+        "en": "Guides",
+        "it": "Guide"
+      },
       "sections": [
         {
           "id": "guides-content",
-          "title": { "en": "Content", "it": "Contenuti" },
+          "title": {
+            "en": "Content",
+            "it": "Contenuti"
+          },
           "pages": [
-            { "id": "markdown", "title": "Markdown features", "source": "markdown.md" },
-            { "id": "components", "title": "Interactive components", "source": "components.md", "badge": "new" },
-            { "id": "security", "title": "Security model", "source": "security.md" }
+            {
+              "id": "markdown",
+              "title": "Markdown features",
+              "source": "markdown.md"
+            },
+            {
+              "id": "components",
+              "title": "Interactive components",
+              "source": "components.md",
+              "badge": "new"
+            },
+            {
+              "id": "security",
+              "title": "Security model",
+              "source": "security.md"
+            }
           ]
         },
         {
           "id": "guides-customization",
-          "title": { "en": "Customization", "it": "Personalizzazione" },
+          "title": {
+            "en": "Customization",
+            "it": "Personalizzazione"
+          },
           "pages": [
-            { "id": "themes", "title": "Themes", "source": "themes.md", "badge": "new" },
-            { "id": "versions", "title": "Versioned docs", "source": "versions.md", "badge": "new" },
-            { "id": "diagrams", "title": "Diagrams", "source": "diagrams.md", "badge": "opt-in" }
+            {
+              "id": "themes",
+              "title": "Themes",
+              "source": "themes.md",
+              "badge": "new"
+            },
+            {
+              "id": "versions",
+              "title": "Versioned docs",
+              "source": "versions.md",
+              "badge": "new"
+            },
+            {
+              "id": "diagrams",
+              "title": "Diagrams",
+              "source": "diagrams.md",
+              "badge": "opt-in"
+            }
           ]
         }
       ]
     },
     {
       "id": "reference",
-      "title": { "en": "Reference", "it": "Riferimento" },
+      "title": {
+        "en": "Reference",
+        "it": "Riferimento"
+      },
       "pages": [
-        { "id": "api", "title": "Component API", "source": "api.md" },
-        { "id": "technical", "title": "Technical details", "source": "technical.md" }
+        {
+          "id": "api",
+          "title": "Component API",
+          "source": "api.md"
+        },
+        {
+          "id": "technical",
+          "title": "Technical details",
+          "source": "technical.md"
+        }
       ]
+    }
+  ],
+  "attachments": [
+    {
+      "id": "demo-context",
+      "label": {
+        "en": "Demo project context",
+        "it": "Contesto del progetto demo"
+      },
+      "description": {
+        "en": "A portable Markdown brief for the sample project.",
+        "it": "Un riepilogo Markdown del progetto di esempio."
+      },
+      "url": "./downloads/demo-context.md",
+      "group": {
+        "en": "Project",
+        "it": "Progetto"
+      },
+      "mediaType": "text/markdown",
+      "download": "nimbly-demo-context.md",
+      "bytes": 588
     }
   ]
 }

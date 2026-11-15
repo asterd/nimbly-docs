@@ -1,8 +1,8 @@
 import { SIDEBAR_STATE_PREFIX } from "./constants.js";
 import { chevronIcon } from "./icons.js";
-import { badgeTone } from "./markdown.js";
+import { badgeClass, badgeLabel } from "./badges.js";
 import { buildHash } from "./router.js";
-import type { ManifestSection, ResolvedManifest } from "./types.js";
+import type { ManifestBadge, ManifestSection, ResolvedManifest } from "./types.js";
 
 export class Sidebar {
   private expanded = new Set<string>();
@@ -26,11 +26,19 @@ export class Sidebar {
     frag.appendChild(title);
     for (const section of this.manifest.sections) frag.appendChild(this.renderSection(section, activePageId));
     this.host.replaceChildren(frag);
+    // Scroll only the navigation viewport; keep the document and focus in place.
+    const active = this.host.querySelector<HTMLElement>('[aria-current="page"]');
+    const viewport = this.host;
+    if (active && viewport) {
+      const item = active.getBoundingClientRect(), bounds = viewport.getBoundingClientRect();
+      if (item.top < bounds.top) viewport.scrollTop += item.top - bounds.top - 8;
+      else if (item.bottom > bounds.bottom) viewport.scrollTop += item.bottom - bounds.bottom + 8;
+    }
   }
 
-  private renderSection(section: ManifestSection, activePageId: string): HTMLElement {
+  private renderSection(section: ManifestSection, activePageId: string, nested = false): HTMLElement {
     const group = document.createElement("section");
-    group.className = "nd-nav-section";
+    group.className = nested ? "nd-nav-section nd-nav-subsection" : "nd-nav-section";
     // A section is open if the user expanded it OR it holds the active page.
     const expanded = this.expanded.has(section.id) || this.sectionContains(section, activePageId);
 
@@ -39,6 +47,7 @@ export class Sidebar {
     btn.className = "nd-section-toggle";
     btn.setAttribute("aria-expanded", String(expanded));
     btn.setAttribute("aria-controls", `nd-section-${cssSafe(section.id)}`);
+    btn.dataset.sectionId = section.id;
     btn.innerHTML = `${chevronIcon()}<span>${escapeHtml(str(section.title))}</span>`;
     // Toggle only this section in-place. Rebuilding the whole tree on every
     // click was fragile and dropped focus/handlers; here we just flip state.
@@ -61,19 +70,17 @@ export class Sidebar {
       if (!page.hidden) list.appendChild(this.renderPage(page.id, str(page.title), page.badge, activePageId));
     }
     for (const sub of section.sections || []) {
-      const pages = (sub.pages || []).filter((page) => !page.hidden);
-      if (pages.length === 0) continue;
-      const caption = document.createElement("li");
-      caption.className = "nd-page-group";
-      caption.textContent = str(sub.title);
-      list.appendChild(caption);
-      for (const page of pages) list.appendChild(this.renderPage(page.id, str(page.title), page.badge, activePageId));
+      if (!this.hasVisiblePages(sub)) continue;
+      const item = document.createElement("li");
+      item.className = "nd-nav-branch";
+      item.appendChild(this.renderSection(sub, activePageId, true));
+      list.appendChild(item);
     }
     group.appendChild(list);
     return group;
   }
 
-  private renderPage(id: string, title: string, badge: string | undefined, active: string): HTMLLIElement {
+  private renderPage(id: string, title: string, badge: ManifestBadge | undefined, active: string): HTMLLIElement {
     const li = document.createElement("li");
     const a = document.createElement("a");
     a.className = "nd-page-link";
@@ -86,8 +93,9 @@ export class Sidebar {
     a.addEventListener("click", () => this.onNavigate());
     if (badge) {
       const b = document.createElement("span");
-      b.className = `nd-badge nd-tone-${badgeTone(badge)}`;
-      b.textContent = badge;
+      b.className = `nd-badge nd-tone-${badgeClass(badge)}`;
+      b.textContent = badgeLabel(badge);
+      b.title = badgeLabel(badge);
       a.appendChild(b);
     }
     li.appendChild(a);
@@ -98,6 +106,10 @@ export class Sidebar {
     return Boolean(section.pages?.some((p) => p.id === pageId) || section.sections?.some((s) => this.sectionContains(s, pageId)));
   }
 
+  private hasVisiblePages(section: ManifestSection): boolean {
+    return Boolean(section.pages?.some(page => !page.hidden) || section.sections?.some(child => this.hasVisiblePages(child)));
+  }
+
   private loadState(): void {
     try {
       const saved = JSON.parse(sessionStorage.getItem(this.storageKey) || "[]") as unknown;
@@ -105,7 +117,13 @@ export class Sidebar {
     } catch { /* unavailable or corrupt session storage */ }
     if (this.expanded.size === 0) {
       for (const id of this.manifest.features.sidebar.defaultExpanded) this.expanded.add(id);
-      for (const s of this.manifest.sections) if (!s.collapsed) this.expanded.add(s.id);
+      const expandDefaults = (sections: ManifestSection[]): void => {
+        for (const section of sections) {
+          if (!section.collapsed) this.expanded.add(section.id);
+          expandDefaults(section.sections || []);
+        }
+      };
+      expandDefaults(this.manifest.sections);
     }
   }
 

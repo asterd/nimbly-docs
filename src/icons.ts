@@ -44,3 +44,7 @@ export const starIcon = (): string => svg('<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 
 export const warningIcon = (): string => svg('<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M12 9v4M12 17h.01"></path>');
 export const dangerIcon = (): string => svg('<path d="M7.9 2h8.2L22 7.9v8.2L16.1 22H7.9L2 16.1V7.9z"></path><path d="M12 8v4M12 16h.01"></path>');
 export const layersIcon = (): string => svg('<path d="m12 2 10 5-10 5L2 7z"></path><path d="m2 17 10 5 10-5M2 12l10 5 10-5"></path>');
+export const downloadIcon = (): string =>
+  svg('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path>');
+export const historyIcon = (): string =>
+  svg('<circle cx="6" cy="6" r="2.5"></circle><circle cx="6" cy="18" r="2.5"></circle><circle cx="18" cy="8" r="2.5"></circle><path d="M6 8.5v7M18 10.5c0 4-6 3-11 5.5"></path>');

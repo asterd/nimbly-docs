@@ -42,6 +42,7 @@ const TOKEN_ALLOWLIST = new Set([
   "font-size", "line-height", "heading-weight", "header-bg", "header-text", "header-muted",
   "header-border", "sidebar-bg", "nav-active-bg", "nav-active-text",
   "color-note", "color-tip", "color-warning", "color-danger",
+  "sidebar-width",
 ]);
 
 const BUILT_INS = new Set<string>(BUILT_IN_THEMES);
@@ -91,7 +92,7 @@ export class ThemeManager {
       ? appearance
       : isAppearance(storageGet(APPEARANCE_STORAGE_KEY))
         ? (storageGet(APPEARANCE_STORAGE_KEY) as Appearance)
-        : "auto";
+        : this.manifest.appearance ?? "auto";
     return this.apply();
   }
 

@@ -4,6 +4,10 @@ Nimbly Docs is a Web Component that renders Markdown documentation from a JSON m
 
 This site runs on Nimbly Docs and uses the default theme, Nimbly Classic. You can try the other themes from the palette button in the header, and open the docs of the previous release from the version selector next to the logo.
 
+:::tip Try the 0.0.8 features
+Open [Try the new features](./feature-tour.md) for working downloads, document revisions and semantic badges. Explore the new sidebar section down to [Users table](./demo-users.md) to try four nested subsection levels, inherited attachments and automatic ancestor expansion. The palette selector also works in the mobile navigation drawer.
+:::
+
 ## How it works
 
 You ship three things with your application:
@@ -19,6 +23,8 @@ Serve them from the same origin and add `<nimbly-docs manifest="./index.json">` 
 | Feature | Supported | Notes |
 | --- | :---: | --- |
 | Nested sidebar | ✓ | Built from the manifest, keyboard accessible |
+| Document downloads | ✓ | Grouped static attachments, section inheritance and current-page Markdown export |
+| Document revisions | ✓ | Inherited branch, update date, source and explicit status tones |
 | Hash routing | ✓ | Deep links, refresh and browser history work |
 | Local search | ✓ | The index is built in the browser as pages load |
 | Markdown | ✓ | Raw HTML is escaped and the output is sanitized |

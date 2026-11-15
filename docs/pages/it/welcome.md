@@ -4,8 +4,8 @@ Nimbly Docs è un Web Component che mostra documentazione Markdown a partire da 
 
 Stai leggendo la versione italiana di questa pagina. Per tornare all'inglese usa il selettore della lingua nell'header.
 
-:::tip Novità della 0.0.7
-I code group sono indipendenti, a meno che non condividano una chiave `{sync=...}`. I chip hanno un colore legato al tema e si possono usare anche nel testo con `:badge[...]`. Le task list mostrano le checkbox, Mermaid e Pele sono in un'unica pagina sui diagrammi e le immagini relative si caricano correttamente.
+:::tip Prova le novità della 0.0.8
+Apri [Prova le nuove funzionalità](../feature-tour.md): trovi allegati da scaricare, esportazione Markdown, revisioni e badge colorati. Nella sidebar la sezione «Novità 0.0.8» arriva fino alla [Tabella utenti](../demo-users.md), con quattro livelli di sottosezioni e allegati ereditati. Il selettore della palette è disponibile anche nel menu mobile.
 :::
 
 ## Come funziona
@@ -23,6 +23,8 @@ Pubblicale sulla stessa origine e aggiungi `<nimbly-docs manifest="./index.json"
 | Funzione | Inclusa |
 | --- | :---: |
 | Sidebar annidata | ✓ |
+| Allegati raggruppati ed esportazione Markdown | ✓ |
+| Revisioni dei documenti e badge semantici | ✓ |
 | Routing con hash | ✓ |
 | Ricerca locale | ✓ |
 | Temi chiaro/scuro | ✓ |

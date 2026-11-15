@@ -347,6 +347,8 @@ export function renderThemeSelector(
   button.setAttribute("aria-label", label);
   button.title = label;
   button.setAttribute("aria-haspopup", "listbox");
+  button.setAttribute("aria-expanded", "false");
+  button.setAttribute("part", "theme-picker");
   button.innerHTML = `<span class="nd-lang-glyph" aria-hidden="true">${paletteIcon()}</span><span class="nd-theme-name"></span><span class="nd-lang-caret" aria-hidden="true">${chevronIcon()}</span>`;
   button.querySelector<HTMLElement>(".nd-theme-name")!.textContent = themeLabel(choices.includes(active) ? active : choices[0]!);
   host.appendChild(button);
@@ -363,32 +365,58 @@ export function renderThemeMenu(
   onSelect: (name: string) => void
 ): void {
   const host = refs.app.querySelector<HTMLElement>(".nd-theme-pick");
-  if (!host) return;
-  host.querySelector(".nd-lang-menu")?.remove();
+  const button = refs.themeButton;
+  if (!host || !button) return;
+  const existing = host.querySelector<HTMLElement>(".nd-lang-menu");
+  if (existing) { existing.dispatchEvent(new Event("nd-close-picker")); return; }
   const menu = document.createElement("div");
   menu.className = "nd-lang-menu";
+  menu.setAttribute("part", "theme-menu");
   menu.setAttribute("role", "listbox");
+  menu.setAttribute("aria-label", button.getAttribute("aria-label") || "Theme");
+  button.setAttribute("aria-expanded", "true");
+  const close = (restoreFocus = false): void => {
+    menu.remove();
+    button.setAttribute("aria-expanded", "false");
+    refs.app.removeEventListener("click", dismiss, true);
+    if (restoreFocus) button.focus();
+  };
+  const dismiss = (event: Event): void => {
+    if (!menu.contains(event.target as Node) && !button.contains(event.target as Node)) close();
+  };
+  menu.addEventListener("nd-close-picker", () => close(true), { once: true });
   for (const name of choices) {
     const option = document.createElement("button");
     option.type = "button";
     option.className = "nd-lang-option";
     option.setAttribute("role", "option");
     option.setAttribute("aria-selected", String(name === active));
+    option.tabIndex = name === active ? 0 : -1;
     option.textContent = themeLabel(name);
-    option.addEventListener("click", () => {
-      menu.remove();
-      onSelect(name);
-    });
+    option.addEventListener("click", () => { close(true); onSelect(name); });
     menu.appendChild(option);
   }
+  menu.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); close(true); return; }
+    if (event.key === "Tab") { close(true); return; }
+    const options = Array.from(menu.querySelectorAll<HTMLButtonElement>("button"));
+    const at = options.indexOf(menu.getRootNode() instanceof ShadowRoot
+      ? (menu.getRootNode() as ShadowRoot).activeElement as HTMLButtonElement
+      : document.activeElement as HTMLButtonElement);
+    let next = at;
+    if (event.key === "ArrowDown") next = (at + 1) % options.length;
+    else if (event.key === "ArrowUp") next = (at - 1 + options.length) % options.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = options.length - 1;
+    else return;
+    event.preventDefault();
+    for (const option of options) option.tabIndex = -1;
+    options[next]!.tabIndex = 0;
+    options[next]!.focus();
+  });
   host.appendChild(menu);
-  const dismiss = (event: Event): void => {
-    if (!menu.contains(event.target as Node) && event.target !== refs.themeButton) {
-      menu.remove();
-      refs.app.removeEventListener("click", dismiss, true);
-    }
-  };
-  setTimeout(() => refs.app.addEventListener("click", dismiss, true), 0);
+  refs.app.addEventListener("click", dismiss, true);
+  (menu.querySelector<HTMLButtonElement>('[aria-selected="true"]') || menu.querySelector<HTMLButtonElement>("button"))?.focus();
 }
 
 /** Build the header version selector. Returns the button, or null when unversioned. */
