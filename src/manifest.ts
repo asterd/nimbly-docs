@@ -18,6 +18,10 @@ import type {
   ResolvedPage,
   ResolvedVersion,
   VersionStatus,
+  ResolvedAttachment,
+  ManifestBadge,
+  ManifestRevision,
+  BadgeTone,
 } from "./types.js";
 import { BUILT_IN_THEMES, ID_PATTERN, LIMITS, MANIFEST_MAJOR, VERSION_ID_PATTERN } from "./constants.js";
 
@@ -107,6 +111,96 @@ interface LocaleCtx {
   defaultLocale: string;
 }
 
+const BADGE_TONES = new Set(["neutral", "success", "warning", "danger", "info"]);
+
+function validateBadge(value: unknown, loc: LocaleCtx): ManifestBadge | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === "string") return value;
+  if (!isPlainObject(value)) throw new ManifestError("badge must be a string or an object");
+  const label = resolveTitle(value.label, "badge.label", loc.locale, loc.defaultLocale);
+  if (value.tone !== undefined && !BADGE_TONES.has(String(value.tone))) {
+    throw new ManifestError("badge.tone is not supported");
+  }
+  return { label, ...(value.tone ? { tone: value.tone as BadgeTone } : {}) };
+}
+
+function validateAttachment(value: unknown, manifestUrl: string, loc: LocaleCtx): ResolvedAttachment {
+  if (!isPlainObject(value)) throw new ManifestError("attachment must be an object");
+  const file: ResolvedAttachment = {
+    label: resolveTitle(value.label, "attachment.label", loc.locale, loc.defaultLocale),
+    url: resolveSource(requireString(value.url, "attachment.url"), manifestUrl),
+  };
+  if (value.id !== undefined) {
+    if (typeof value.id !== "string" || !ID_PATTERN.test(value.id)) throw new ManifestError("invalid attachment id");
+    file.id = value.id;
+  }
+  for (const field of ["description", "group"] as const) {
+    if (value[field] !== undefined) file[field] = resolveTitle(value[field], "attachment." + field, loc.locale, loc.defaultLocale);
+  }
+  if (value.bytes !== undefined) {
+    if (!Number.isSafeInteger(value.bytes) || (value.bytes as number) < 0) throw new ManifestError("attachment.bytes must be a non-negative safe integer");
+    file.bytes = value.bytes as number;
+  }
+  if (value.mediaType !== undefined) file.mediaType = requireString(value.mediaType, "attachment.mediaType");
+  if (value.download !== undefined) {
+    if (typeof value.download !== "boolean" && (typeof value.download !== "string" || !value.download || /[\\/\\\\\x00-\x1f]/.test(value.download))) {
+      throw new ManifestError("attachment.download must be a boolean or a plain filename");
+    }
+    file.download = value.download as boolean | string;
+  }
+  return file;
+}
+
+function attachmentCatalog(raw: unknown, manifestUrl: string, loc: LocaleCtx): Map<string, ResolvedAttachment> {
+  const catalog = new Map<string, ResolvedAttachment>();
+  if (raw === undefined) return catalog;
+  if (!Array.isArray(raw)) throw new ManifestError("attachments catalog must be an array");
+  for (const value of raw) {
+    const file = validateAttachment(value, manifestUrl, loc);
+    if (!file.id || catalog.has(file.id)) throw new ManifestError("attachment catalog ids must be present and unique");
+    catalog.set(file.id, file);
+  }
+  return catalog;
+}
+
+interface PageDefaults {
+  catalog: Map<string, ResolvedAttachment>;
+  attachments: ResolvedAttachment[];
+  revision?: ManifestRevision;
+}
+
+function inheritDefaults(raw: Record<string, unknown>, parent: PageDefaults, manifestUrl: string, loc: LocaleCtx): PageDefaults {
+  const files = new Map(parent.attachments.map(file => [file.url, file]));
+  if (raw.attachments !== undefined) {
+    if (!Array.isArray(raw.attachments)) throw new ManifestError("page/section attachments must be an array");
+    for (const entry of raw.attachments) {
+      const file = typeof entry === "string" ? parent.catalog.get(entry) : validateAttachment(entry, manifestUrl, loc);
+      if (!file) throw new ManifestError("unknown attachment reference: " + String(entry));
+      files.set(file.url, file);
+    }
+  }
+  let revision = parent.revision;
+  if (raw.revision !== undefined) {
+    if (!isPlainObject(raw.revision)) throw new ManifestError("revision must be an object");
+    revision = { ...revision };
+    for (const field of ["branch", "commit", "updatedAt", "source"] as const) {
+      const value = raw.revision[field];
+      if (value !== undefined) {
+        if (typeof value !== "string" || value.length > 1024) throw new ManifestError("revision." + field + " must be a string up to 1024 characters");
+        revision[field] = value;
+      }
+    }
+    if (revision.updatedAt && !Number.isFinite(Date.parse(revision.updatedAt))) throw new ManifestError("revision.updatedAt must be a valid date");
+    if (raw.revision.branchTone !== undefined) {
+      if (!BADGE_TONES.has(String(raw.revision.branchTone))) throw new ManifestError("invalid revision.branchTone");
+      revision.branchTone = raw.revision.branchTone as BadgeTone;
+    }
+    const status = validateBadge(raw.revision.status, loc);
+    if (status !== undefined) revision.status = status;
+  }
+  return { catalog: parent.catalog, attachments: [...files.values()], ...(revision ? { revision } : {}) };
+}
+
 /** Validate a resolvable http(s)/relative source URL, returning its absolute href. */
 function resolveSourceOrNull(source: string, manifestUrl: string): string | null {
   try {
@@ -190,7 +284,8 @@ function validatePage(
   seenIds: Set<string>,
   sectionPath: string[],
   out: { order: ResolvedPage[]; pages: Map<string, ResolvedPage> },
-  loc: LocaleCtx
+  loc: LocaleCtx,
+  parent: PageDefaults
 ): ResolvedPage {
   if (!isPlainObject(page)) throw new ManifestError("each page must be an object");
   const id = requireString(page.id, "page.id");
@@ -212,10 +307,13 @@ function validatePage(
   const normalized = { id, title } as Omit<ResolvedPage, "url" | "candidates" | "sectionPath">;
   const description = resolveOptionalLocalized(page.description, loc);
   if (description) normalized.description = description;
-  if (typeof page.badge === "string") normalized.badge = page.badge;
+  const badge = validateBadge(page.badge, loc);
+  if (badge !== undefined) normalized.badge = badge;
   if (page.hidden === true) normalized.hidden = true;
 
-  const resolved: ResolvedPage = { ...normalized, url: candidates[0]!, candidates, sectionPath };
+  const defaults = inheritDefaults(page, parent, manifestUrl, loc);
+  const resolved: ResolvedPage = { ...normalized, url: candidates[0]!, candidates, sectionPath, attachments: defaults.attachments };
+  if (defaults.revision) resolved.revision = defaults.revision;
   out.pages.set(id, resolved);
   if (!normalized.hidden || true) out.order.push(resolved);
 
@@ -232,7 +330,8 @@ function validateSection(
   parentPath: string[],
   depth: number,
   out: { order: ResolvedPage[]; pages: Map<string, ResolvedPage> },
-  loc: LocaleCtx
+  loc: LocaleCtx,
+  parent: PageDefaults
 ): ManifestSection {
   if (!isPlainObject(section)) throw new ManifestError("each section must be an object");
   const id = requireString(section.id, "section.id");
@@ -243,6 +342,7 @@ function validateSection(
   seenIds.add(id);
   const title = resolveTitle(section.title, "section.title", loc.locale, loc.defaultLocale);
   const path = [...parentPath, title];
+  const defaults = inheritDefaults(section, parent, manifestUrl, loc);
 
   const normalized: ManifestSection = { id, title, pages: [], sections: [] };
   if (typeof section.icon === "string") normalized.icon = section.icon;
@@ -250,13 +350,15 @@ function validateSection(
 
   if (section.pages !== undefined) {
     if (!Array.isArray(section.pages)) throw new ManifestError(`section "${id}" pages must be an array`);
-    normalized.pages = section.pages.map((p) => validatePage(p, manifestUrl, seenIds, path, out, loc));
+    normalized.pages = section.pages.map((p) => validatePage(p, manifestUrl, seenIds, path, out, loc, defaults));
   }
   if (section.sections !== undefined) {
-    if (depth >= 1) throw new ManifestError(`section "${id}" nests too deeply (max 1 level)`);
+    if (section.sections instanceof Array && section.sections.length > 0 && depth >= LIMITS.maxSectionDepth) {
+      throw new ManifestError(`section "${id}" nests too deeply (max ${LIMITS.maxSectionDepth} nested levels)`);
+    }
     if (!Array.isArray(section.sections)) throw new ManifestError(`section "${id}" sections must be an array`);
     normalized.sections = section.sections.map((s) =>
-      validateSection(s, manifestUrl, seenIds, path, depth + 1, out, loc)
+      validateSection(s, manifestUrl, seenIds, path, depth + 1, out, loc, defaults)
     );
   }
   if ((normalized.pages?.length ?? 0) === 0 && (normalized.sections?.length ?? 0) === 0) {
@@ -417,7 +519,8 @@ export function normalizeManifest(raw: unknown, manifestUrl: string, locale = ""
   const loc: LocaleCtx = { locale: locale || defaultLocale, defaultLocale };
   const out = { order: [] as ResolvedPage[], pages: new Map<string, ResolvedPage>() };
   const seenIds = new Set<string>();
-  const sections = raw.sections.map((s) => validateSection(s, manifestUrl, seenIds, [], 0, out, loc));
+  const defaults: PageDefaults = { catalog: attachmentCatalog(raw.attachments, manifestUrl, loc), attachments: [] };
+  const sections = raw.sections.map((s) => validateSection(s, manifestUrl, seenIds, [], 0, out, loc, defaults));
 
   if (out.pages.size === 0) throw new ManifestError("manifest must contain at least one page");
 
@@ -430,6 +533,7 @@ export function normalizeManifest(raw: unknown, manifestUrl: string, locale = ""
     previousNext: f.previousNext !== false,
     breadcrumbs: f.breadcrumbs !== false,
     editLink: f.editLink === true,
+    sourceDownload: f.sourceDownload === true,
     sidebar: {
       collapsible: sidebar.collapsible !== false,
       defaultExpanded: Array.isArray(sidebar.defaultExpanded)

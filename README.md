@@ -310,7 +310,7 @@ A small, tasteful **"Powered by Nimbly Docs"** footer is always rendered and is 
 - Page and section ids are globally unique and match `^[a-z0-9][a-z0-9/_-]{0,127}$`.
 - A maximum of **500 pages**, **256 KB manifest** and **2 MB Markdown page** is enforced by default.
 - Page sources resolve only as HTTP(S) URLs; credentials and token-like query parameters are rejected.
-- A section supports one nested subsection level in v1.
+- A section supports up to four nested subsection levels.
 - Unknown fields are not interpreted as behavior. This permits additive metadata without accidentally enabling execution.
 
 ## Markdown
@@ -582,6 +582,14 @@ Nimbly Docs targets currently supported evergreen Chromium, Firefox and Safari v
 - [ ] Verify the deployed host sends the expected MIME types (`text/javascript`, `application/json`, `text/markdown`) and cache headers.
 - [ ] Smoke-test a static host: root route, deep route, refresh, back/forward, mobile drawer, keyboard search and a failed page request.
 - [ ] Review dependency advisories and the final gzip size before release.
+
+## Native document downloads and nested navigation (0.0.8)
+
+The v1 manifest remains backward compatible. Navigation now supports four nested subsection levels, each with independent collapse state and active-page expansion. String badges retain their existing colours; `{label, tone}` supports explicit semantic tones.
+
+Static attachments can be declared once in the manifest catalog and inherited from sections. The optional `revision` object shows document provenance without putting it in Markdown. Enable `features.sourceDownload` to offer the current Markdown source. No backend or plugin is required.
+
+See [the downloads reference](docs/pages/downloads.md). Use `chooseThemes: true` to expose all palettes, or an array to choose a subset. The palette selector is available on desktop and mobile, supports keyboard navigation, and persists separately from light/dark appearance.
 
 ## License
 

@@ -91,7 +91,7 @@
     }
   ],
 
-  // Required. Ordered navigation. Sections may nest one level of subsections.
+  // Required. Ordered navigation. Sections may nest up to four subsection levels.
   "sections": [
     {
       "id": "start",
@@ -148,7 +148,7 @@
 | `id` | ✓ | id | Globally unique, `^[a-z0-9][a-z0-9/_-]{0,127}$`. |
 | `title` | ✓ | localizable | Shown in the sidebar. |
 | `pages` |  | array | Page entries. |
-| `sections` |  | array | One level of subsections. In the sidebar each one appears as a small caption above its pages. |
+| `sections` |  | array | Up to four levels of independently collapsible subsections. |
 | `collapsed` |  | boolean | Start collapsed. |
 
 ### Pages
@@ -160,7 +160,7 @@
 | `source` |  | localizable | Path (or per-locale map). Optional with conventions. |
 | `sources` |  | object | Alternative per-locale `{ locale: path }` map. |
 | `description` |  | localizable | Search/summary text. |
-| `badge` |  | string | Short label shown at the right of the sidebar entry. Coloured by its text (see below). |
+| `badge` |  | string | String or {label, tone}. Explicit tones are neutral, success, warning, danger and info. |
 | `hidden` |  | boolean | Routable but not listed. |
 
 ### Page badges
@@ -266,5 +266,12 @@ Page ids can contain `/`, as in `api/orders`. Matching folders keep things tidy,
 - Ids must be unique across the manifest and match `^[a-z0-9][a-z0-9/_-]{0,127}$`.
 - Default limits: 500 pages, 256 KB for the manifest, 2 MB per Markdown page.
 - Sources must resolve to `http(s)` URLs. URLs with credentials or token-like query parameters are rejected.
-- Sections can nest one level deep.
+- Sections support up to four nested subsection levels.
 - Unknown fields are ignored, so you can add your own metadata.
+
+
+## Attachments and source revisions
+
+A root-level `attachments` catalog defines reusable static downloads. Sections and pages reference their ids or declare inline attachments. Page entries append to inherited section entries; the last entry for a URL wins. Files use the same URL safety checks as Markdown sources.
+
+See [Downloads and document information](./downloads.md) for the complete contract and examples.

@@ -7,3 +7,4 @@ coverage/
 *.tsbuildinfo
 docs/assets/nimbly-docs.min.js
 docs/cdn/
+.vscode

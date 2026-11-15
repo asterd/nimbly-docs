@@ -11,6 +11,7 @@ import { buildHash, Router, setRouteVersion, type Route } from "./router.js";
 import { SearchController } from "./search.js";
 import { applyBrand, createShell, renderLanguageMenu, renderLanguageSelector, renderThemeMenu, renderThemeSelector, renderVersionMenu, renderVersionSelector, themeLabel, type BrandConfig, type ShellRefs } from "./shell.js";
 import { Sidebar } from "./sidebar.js";
+import { renderPageTools } from "./page-tools.js";
 import { ThemeManager, type Appearance, type ThemeState } from "./theme.js";
 import { Toc } from "./toc.js";
 import { persistedLocale, persistLocale, stringsFor, type UIStrings } from "./i18n.js";
@@ -272,8 +273,8 @@ export class NimblyDocsElement extends HTMLElement {
     this.shell = shell;
 
     this.themes = new ThemeManager(this, this.manifest, (state) => this.onThemeChange(state));
-    // Attribute wins; otherwise the manifest's declared default appearance is used.
-    const appearanceAttr = this.getAttribute("appearance") ?? this.manifest.appearance ?? null;
+    // Attribute > saved user preference > manifest default.
+    const appearanceAttr = this.getAttribute("appearance");
     this.themes.initialize(this.getAttribute("theme"), appearanceAttr);
 
     this.sidebarView = new Sidebar(shell.sidebarNav, this.manifest, () => this.closeDrawer(), this.strings.documentation);
@@ -460,6 +461,11 @@ export class NimblyDocsElement extends HTMLElement {
         labels: { note: s.note, tip: s.tip, important: s.important, warning: s.warning, danger: s.danger },
       });
       shell.content.replaceChildren(result.fragment);
+      const tools = renderPageTools(page, sourceUrl, s, manifest.features.sourceDownload, markdown);
+      if (tools) {
+        const title = shell.content.querySelector("h1");
+        if (title) title.after(tools); else shell.content.prepend(tools);
+      }
       shell.content.removeAttribute("aria-busy");
       void this.renderDiagrams();
       this.sidebarView?.render(page.id);
@@ -491,7 +497,9 @@ export class NimblyDocsElement extends HTMLElement {
       shell.breadcrumbs.hidden = false;
     } else shell.breadcrumbs.hidden = true;
     if (!manifest.features.previousNext) { shell.pagination.hidden = true; return; }
-    const at = manifest.order.findIndex((p) => p.id === page.id), prev = manifest.order[at - 1], next = manifest.order[at + 1];
+    const visible = manifest.order.filter(item => !item.hidden);
+    const at = visible.findIndex((p) => p.id === page.id), prev = visible[at - 1], next = visible[at + 1];
+    if (at < 0) { shell.pagination.hidden = true; return; }
     shell.pagination.replaceChildren();
     if (prev) shell.pagination.appendChild(this.pageLink(prev, this.strings.previous, "nd-page-prev")); else shell.pagination.appendChild(document.createElement("span"));
     if (next) shell.pagination.appendChild(this.pageLink(next, this.strings.next, "nd-page-next"));

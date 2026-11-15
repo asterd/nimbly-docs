@@ -5,7 +5,7 @@
  * the viewer works with after validation.
  */
 
-/** Semantic feature toggles declared by the manifest. All are optional and default to `true`. */
+/** Semantic feature toggles. Defaults are true unless explicitly documented. */
 export interface ManifestFeatures {
   search?: boolean;
   toc?: boolean;
@@ -13,6 +13,8 @@ export interface ManifestFeatures {
   previousNext?: boolean;
   breadcrumbs?: boolean;
   editLink?: boolean;
+  /** Offer the current Markdown source as a download. Opt-in. */
+  sourceDownload?: boolean;
   sidebar?: {
     collapsible?: boolean;
     /** Section ids expanded on first load. */
@@ -22,6 +24,37 @@ export interface ManifestFeatures {
 
 /** A string that may be localized as a `{ locale: value }` map. */
 export type LocalizableString = string | Record<string, string>;
+
+export type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info";
+export type ManifestBadge = string | { label: LocalizableString; tone?: BadgeTone };
+
+/** A static file. URLs follow the same safety policy as Markdown sources. */
+export interface ManifestAttachment {
+  id?: string;
+  label: LocalizableString;
+  url: string;
+  description?: LocalizableString;
+  group?: LocalizableString;
+  mediaType?: string;
+  bytes?: number;
+  download?: boolean | string;
+}
+
+export interface ResolvedAttachment extends Omit<ManifestAttachment, "label" | "description" | "group"> {
+  label: string;
+  description?: string;
+  group?: string;
+}
+
+/** Optional, declarative provenance inherited from a section. */
+export interface ManifestRevision {
+  branch?: string;
+  branchTone?: BadgeTone;
+  commit?: string;
+  updatedAt?: string;
+  source?: string;
+  status?: ManifestBadge;
+}
 
 /** A single documentation page entry in the manifest. */
 export interface ManifestPage {
@@ -41,7 +74,10 @@ export interface ManifestPage {
   /** Optional short description used in search and metadata. */
   description?: string;
   /** Optional badge shown next to the page in the sidebar (e.g. "new", "beta"). */
-  badge?: string;
+  badge?: ManifestBadge;
+  /** Catalog ids or inline file descriptors, appended to section attachments. */
+  attachments?: (string | ManifestAttachment)[];
+  revision?: ManifestRevision;
   /** Hide from the sidebar but keep routable. */
   hidden?: boolean;
 }
@@ -78,15 +114,17 @@ export interface ManifestLanguage {
   label: string;
 }
 
-/** A navigable group of pages. Sections may nest one level of subsections. */
+/** A navigable group of pages. Up to four nested subsection levels. */
 export interface ManifestSection {
   id: string;
   title: LocalizableString;
   /** Optional icon key (a small built-in glyph set). */
   icon?: string;
   pages?: ManifestPage[];
-  /** Optional nested sections (single level of nesting supported in v1). */
+  /** Optional, independently collapsible nested sections. */
   sections?: ManifestSection[];
+  attachments?: (string | ManifestAttachment)[];
+  revision?: ManifestRevision;
   /** Collapse this section by default. */
   collapsed?: boolean;
 }
@@ -172,11 +210,13 @@ export interface Manifest {
   versions?: ManifestVersion[];
   features?: ManifestFeatures;
   themes?: ManifestTheme[];
+  /** Shared download catalog. Catalog entries require a unique id. */
+  attachments?: ManifestAttachment[];
   sections: ManifestSection[];
 }
 
 /** A page flattened into a lookup table with its resolved absolute source URL. */
-export interface ResolvedPage extends Omit<ManifestPage, "title" | "source"> {
+export interface ResolvedPage extends Omit<ManifestPage, "title" | "source" | "attachments"> {
   /** Title resolved to the active locale. */
   title: string;
   /** Primary absolute URL (first candidate) for the active locale. */
@@ -189,6 +229,7 @@ export interface ResolvedPage extends Omit<ManifestPage, "title" | "source"> {
   candidates: string[];
   /** Section path (titles) for breadcrumbs. */
   sectionPath: string[];
+  attachments: ResolvedAttachment[];
 }
 
 /** The normalized manifest the viewer operates on. */

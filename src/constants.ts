@@ -45,6 +45,7 @@ export const DEFAULT_TIMEOUT = 15_000;
 
 /** Validation limits (configurable via options where relevant). */
 export const LIMITS = {
+  maxSectionDepth: 4,
   maxPages: 500,
   maxManifestBytes: 256 * 1024,
   maxPageBytes: 2 * 1024 * 1024,

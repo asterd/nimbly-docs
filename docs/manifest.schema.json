@@ -3,144 +3,507 @@
   "$id": "https://nimbly-docs.github.io/nimbly-docs/manifest/v1/schema.json",
   "title": "Nimbly Docs Manifest v1",
   "type": "object",
-  "required": ["version", "title", "sections"],
+  "required": [
+    "version",
+    "title",
+    "sections"
+  ],
   "properties": {
-    "$schema": { "type": "string" },
-    "version": { "type": "string", "pattern": "^1(\\.|$)" },
-    "title": { "$ref": "#/$defs/localizable" },
-    "description": { "$ref": "#/$defs/localizable" },
-    "language": { "type": "string" },
-    "theme": { "type": "string" },
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^1(\\.|$)"
+    },
+    "title": {
+      "$ref": "#/$defs/localizable"
+    },
+    "description": {
+      "$ref": "#/$defs/localizable"
+    },
+    "language": {
+      "type": "string"
+    },
+    "theme": {
+      "type": "string"
+    },
     "chooseThemes": {
       "oneOf": [
-        { "type": "boolean" },
-        { "type": "array", "items": { "type": "string" } }
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       ]
     },
-    "home": { "type": "string", "pattern": "^[a-z0-9][a-z0-9/_-]{0,127}$" },
-    "appearance": { "enum": ["light", "dark", "auto"] },
-    "backLink": { "$ref": "#/$defs/backLink" },
-    "logo": { "type": "string" },
-    "editBase": { "type": "string" },
-    "footer": { "type": "string" },
-    "links": { "type": "array", "items": { "$ref": "#/$defs/link" } },
-    "apiReference": { "$ref": "#/$defs/apiReference" },
-    "languages": { "type": "array", "items": { "$ref": "#/$defs/language" } },
-    "versions": { "type": "array", "items": { "$ref": "#/$defs/docVersion" } },
-    "features": { "$ref": "#/$defs/features" },
-    "themes": { "type": "array", "items": { "$ref": "#/$defs/theme" } },
-    "sections": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/section" } }
+    "home": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9/_-]{0,127}$"
+    },
+    "appearance": {
+      "enum": [
+        "light",
+        "dark",
+        "auto"
+      ]
+    },
+    "backLink": {
+      "$ref": "#/$defs/backLink"
+    },
+    "logo": {
+      "type": "string"
+    },
+    "editBase": {
+      "type": "string"
+    },
+    "footer": {
+      "type": "string"
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/link"
+      }
+    },
+    "apiReference": {
+      "$ref": "#/$defs/apiReference"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/language"
+      }
+    },
+    "versions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/docVersion"
+      }
+    },
+    "features": {
+      "$ref": "#/$defs/features"
+    },
+    "themes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/theme"
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/section"
+      }
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/attachment"
+          },
+          {
+            "required": [
+              "id"
+            ]
+          }
+        ]
+      }
+    }
   },
   "$defs": {
-    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9/_-]{0,127}$" },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9/_-]{0,127}$"
+    },
     "localizable": {
       "oneOf": [
-        { "type": "string", "minLength": 1 },
-        { "type": "object", "minProperties": 1, "additionalProperties": { "type": "string" } }
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
       ]
     },
     "page": {
       "type": "object",
-      "required": ["id", "title"],
+      "required": [
+        "id",
+        "title"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/id" },
-        "title": { "$ref": "#/$defs/localizable" },
-        "source": { "$ref": "#/$defs/localizable" },
-        "sources": { "type": "object", "additionalProperties": { "type": "string" } },
-        "description": { "$ref": "#/$defs/localizable" },
-        "badge": { "type": "string" },
-        "hidden": { "type": "boolean" }
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/localizable"
+        },
+        "source": {
+          "$ref": "#/$defs/localizable"
+        },
+        "sources": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "$ref": "#/$defs/localizable"
+        },
+        "badge": {
+          "$ref": "#/$defs/badge"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "attachments": {
+          "$ref": "#/$defs/attachmentList"
+        },
+        "revision": {
+          "$ref": "#/$defs/revision"
+        }
       },
       "additionalProperties": true
     },
     "section": {
       "type": "object",
-      "required": ["id", "title"],
+      "required": [
+        "id",
+        "title"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/id" },
-        "title": { "$ref": "#/$defs/localizable" },
-        "icon": { "type": "string" },
-        "collapsed": { "type": "boolean" },
-        "pages": { "type": "array", "items": { "$ref": "#/$defs/page" } },
-        "sections": { "type": "array", "items": { "$ref": "#/$defs/section" } }
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/localizable"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "collapsed": {
+          "type": "boolean"
+        },
+        "pages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/page"
+          }
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/section"
+          }
+        },
+        "attachments": {
+          "$ref": "#/$defs/attachmentList"
+        },
+        "revision": {
+          "$ref": "#/$defs/revision"
+        }
       },
       "additionalProperties": true
     },
     "link": {
       "type": "object",
-      "required": ["type", "url"],
+      "required": [
+        "type",
+        "url"
+      ],
       "properties": {
-        "type": { "type": "string" },
-        "url": { "type": "string", "format": "uri" },
-        "label": { "type": "string" }
+        "type": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "label": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "apiReference": {
       "type": "object",
-      "required": ["url"],
+      "required": [
+        "url"
+      ],
       "properties": {
-        "url": { "type": "string", "format": "uri" },
-        "label": { "type": "string" }
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "label": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "backLink": {
       "type": "object",
-      "required": ["url"],
+      "required": [
+        "url"
+      ],
       "properties": {
-        "url": { "type": "string" },
-        "label": { "$ref": "#/$defs/localizable" }
+        "url": {
+          "type": "string"
+        },
+        "label": {
+          "$ref": "#/$defs/localizable"
+        }
       },
       "additionalProperties": false
     },
     "language": {
       "type": "object",
-      "required": ["code", "label"],
+      "required": [
+        "code",
+        "label"
+      ],
       "properties": {
-        "code": { "type": "string", "pattern": "^[a-z]{2,3}(-[a-z0-9]{2,8})?$" },
-        "label": { "type": "string" }
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}(-[a-z0-9]{2,8})?$"
+        },
+        "label": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
     "features": {
       "type": "object",
       "properties": {
-        "search": { "type": "boolean" },
-        "toc": { "type": "boolean" },
-        "copyCode": { "type": "boolean" },
-        "previousNext": { "type": "boolean" },
-        "breadcrumbs": { "type": "boolean" },
-        "editLink": { "type": "boolean" },
+        "search": {
+          "type": "boolean"
+        },
+        "toc": {
+          "type": "boolean"
+        },
+        "copyCode": {
+          "type": "boolean"
+        },
+        "previousNext": {
+          "type": "boolean"
+        },
+        "breadcrumbs": {
+          "type": "boolean"
+        },
+        "editLink": {
+          "type": "boolean"
+        },
         "sidebar": {
           "type": "object",
           "properties": {
-            "collapsible": { "type": "boolean" },
-            "defaultExpanded": { "type": "array", "items": { "type": "string" } }
+            "collapsible": {
+              "type": "boolean"
+            },
+            "defaultExpanded": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
           }
+        },
+        "sourceDownload": {
+          "type": "boolean",
+          "default": false
         }
       },
       "additionalProperties": true
     },
     "docVersion": {
       "type": "object",
-      "required": ["id"],
+      "required": [
+        "id"
+      ],
       "properties": {
-        "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$" },
-        "label": { "type": "string" },
-        "manifest": { "type": "string" },
-        "status": { "enum": ["current", "legacy", "unreleased"] }
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$"
+        },
+        "label": {
+          "type": "string"
+        },
+        "manifest": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "current",
+            "legacy",
+            "unreleased"
+          ]
+        }
       },
       "additionalProperties": false
     },
     "theme": {
       "type": "object",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "type": "string" },
-        "base": { "enum": ["nimbly", "nimbus", "midnight", "paper", "sabbia", "material", "stellar", "evergreen"] },
-        "light": { "type": "object", "additionalProperties": { "type": "string" } },
-        "dark": { "type": "object", "additionalProperties": { "type": "string" } }
+        "name": {
+          "type": "string"
+        },
+        "base": {
+          "enum": [
+            "nimbly",
+            "nimbus",
+            "midnight",
+            "paper",
+            "sabbia",
+            "material",
+            "stellar",
+            "evergreen"
+          ]
+        },
+        "light": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "dark": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "badge": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "required": [
+            "label"
+          ],
+          "properties": {
+            "label": {
+              "$ref": "#/$defs/localizable"
+            },
+            "tone": {
+              "enum": [
+                "neutral",
+                "success",
+                "warning",
+                "danger",
+                "info"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "attachment": {
+      "type": "object",
+      "required": [
+        "label",
+        "url"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "$ref": "#/$defs/localizable"
+        },
+        "url": {
+          "type": "string"
+        },
+        "description": {
+          "$ref": "#/$defs/localizable"
+        },
+        "group": {
+          "$ref": "#/$defs/localizable"
+        },
+        "mediaType": {
+          "type": "string"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "download": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "attachmentList": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/$defs/attachment"
+          }
+        ]
+      }
+    },
+    "revision": {
+      "type": "object",
+      "properties": {
+        "branch": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "commit": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "updatedAt": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "source": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "branchTone": {
+          "enum": [
+            "neutral",
+            "success",
+            "warning",
+            "danger",
+            "info"
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/badge"
+        }
       },
       "additionalProperties": false
     }

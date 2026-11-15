@@ -9,6 +9,16 @@
 import { APPEARANCE_STORAGE_KEY } from "./constants.js";
 
 export interface UIStrings {
+  pageTools: string;
+  downloads: string;
+  downloadSource: string;
+  downloadPage: string;
+  downloadFiles: string;
+  revision: string;
+  revisionDate: string;
+  revisionBranch: string;
+  revisionCommit: string;
+  revisionSource: string;
   searchPlaceholder: string;
   searchAria: string;
   onThisPage: string;
@@ -43,6 +53,16 @@ export interface UIStrings {
 }
 
 const en: UIStrings = {
+  pageTools: "Document information and downloads",
+  downloads: "Downloads",
+  downloadSource: "Markdown source",
+  downloadPage: "This page",
+  downloadFiles: "Files",
+  revision: "Version and sources",
+  revisionDate: "Updated",
+  revisionBranch: "Branch",
+  revisionCommit: "Commit",
+  revisionSource: "Source",
   searchPlaceholder: "Search documentation",
   searchAria: "Search documentation",
   onThisPage: "On this page",
@@ -74,6 +94,16 @@ const en: UIStrings = {
 const DICTIONARIES: Record<string, Partial<UIStrings>> = {
   en,
   it: {
+    pageTools: "Informazioni e download del documento",
+    downloads: "Download",
+    downloadSource: "Sorgente Markdown",
+    downloadPage: "Questa pagina",
+    downloadFiles: "Allegati",
+    revision: "Versione e fonti",
+    revisionDate: "Aggiornata il",
+    revisionBranch: "Branch",
+    revisionCommit: "Commit",
+    revisionSource: "Fonte",
     searchPlaceholder: "Cerca nella documentazione",
     searchAria: "Cerca nella documentazione",
     onThisPage: "In questa pagina",
