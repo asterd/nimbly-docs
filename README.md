@@ -41,7 +41,8 @@ The primary design boundary is intentional: **manifests describe documentation; 
 - **Themes**: the default **Nimbly Classic** (`nimbly`), designed for readability on any device; `nimbus`, `midnight`, `paper`, `sabbia`; and `material`, `stellar` and `evergreen`, inspired by Material for MkDocs, Starlight and the Docusaurus classic theme. Every theme has light and dark variants. Token-only custom themes can also restyle the header, sidebar and type ("skin" tokens).
 - **Optional diagrams**: opt-in Mermaid rendering (`mermaid="on"`), lazy-loaded only when a page contains a diagram, in strict security mode.
 - **Header links**: manifest-declared GitHub / LinkedIn / external links rendered as icons, left of the appearance toggle.
-- **API reference link**: a pinned Swagger/OpenAPI link at the bottom of the sidebar.
+- **Integrated API reference**: OpenAPI 3.x and Swagger 2.0 descriptions (JSON or YAML, local or remote) rendered read-only inside the docs, as any sidebar page (`api`) or as the pinned sidebar link (`apiReference.spec`). Operations are grouped by tag, bodies render lazily on open, with schema trees, generated examples and an endpoint filter. External entries (`link`) are supported too.
+- **Image viewer**: content images, image links and diagrams open in a full-screen, mobile-ready carousel with swipe, pinch/double-tap/wheel zoom and pan, instead of a new page.
 - **Multilingual**: manifest-declared languages, per-page Markdown variants, a header language selector, localized UI strings, and graceful fallback.
 - **Live palette selector**: opt-in `chooseThemes` header dropdown switches themes instantly (CSS tokens only, no reload); palette and light/dark appearance stay independent.
 - **Default appearance**: set `light` / `dark` / `auto` from the manifest or the `appearance` attribute; the reader can still override and their choice is remembered.
@@ -299,7 +300,7 @@ The published illustrative schema is [`docs/manifest.schema.json`](docs/manifest
 ```
 
 - **`links`**: header icons (github/linkedin/external; unknown types use a generic icon). URLs must be `https:` with no credentials; they open in a new tab with `rel="noopener noreferrer"`.
-- **`apiReference`**: a single pinned link at the bottom of the sidebar for Swagger/OpenAPI or any external reference. Nimbly Docs links to it rather than embedding a heavy renderer.
+- **`apiReference`**: a pinned link at the bottom of the sidebar. With `spec`, the OpenAPI/Swagger description is rendered inside the docs (route `#/api-reference`, or `id`); with only `url`, it is an external link. See [API reference](#api-reference-and-image-viewer-009).
 - **`languages`** + per-page **`sources`**: the header shows a language selector when two or more languages are declared. The active locale selects the page's `sources[locale]`, falling back to `source`. UI strings are localized from a built-in dictionary (en, it, es, fr, de) with English fallback; the choice is stored under `nimbly-docs:locale`.
 
 A small, tasteful **"Powered by Nimbly Docs"** footer is always rendered and is not configurable away; your own `footer` text renders above it.
@@ -590,6 +591,22 @@ The v1 manifest remains backward compatible. Navigation now supports four nested
 Static attachments can be declared once in the manifest catalog and inherited from sections. The optional `revision` object shows document provenance without putting it in Markdown. Enable `features.sourceDownload` to offer the current Markdown source. No backend or plugin is required.
 
 See [the downloads reference](docs/pages/downloads.md). Use `chooseThemes: true` to expose all palettes, or an array to choose a subset. The palette selector is available on desktop and mobile, supports keyboard navigation, and persists separately from light/dark appearance.
+
+## API reference and image viewer (0.0.9)
+
+Any page can render an **OpenAPI 3.x** or **Swagger 2.0** description instead of Markdown, so each application branch of the navigation can carry its own API. JSON and YAML are both read by built-in parsers (no dependency). The reference is documentation only: it never sends requests.
+
+```json
+{ "id": "billing-api", "title": "Billing API", "api": "./specs/billing.yaml" },
+{ "id": "billing-console", "title": "Billing console", "link": "https://billing.example.com/swagger" }
+```
+
+- `api`: relative to the manifest or an https URL (remote servers must allow CORS); same URL policy as Markdown sources; up to 8 MiB.
+- `link`: an external entry that opens in a new tab; it is not routed, searched or part of previous/next.
+- `apiReference.spec`: renders the description behind the pinned sidebar link.
+- Operations get stable anchors (`#/billing-api#op-<operationId>`); a Markdown link to the spec file plus `#op-…` is rewritten to that route. With `features.sourceDownload`, the spec file is offered under Downloads.
+
+Images, links to image files and diagrams open in the built-in viewer: arrows/swipe to browse, wheel/pinch/double-tap to zoom, drag to pan, `Esc`/swipe down to close. Modified clicks still open a new tab. Disable it with `"features": { "lightbox": false }`. See [docs/pages/api-reference.md](docs/pages/api-reference.md).
 
 ## License
 

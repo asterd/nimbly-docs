@@ -10,6 +10,7 @@ import { sanitizeToFragment } from "./sanitize.js";
 import { buildHash } from "./router.js";
 import { copyIcon, checkIcon } from "./icons.js";
 import { enhanceComponents, type CalloutLabels } from "./components.js";
+import { markZoomables } from "./lightbox.js";
 import type { ResolvedManifest, ResolvedPage, RenderedDoc, NimblyPlugin } from "./types.js";
 
 export interface RenderContext {
@@ -22,6 +23,8 @@ export interface RenderContext {
   plugins: NimblyPlugin[];
   /** Localized default titles for callouts without an authored title. */
   labels: CalloutLabels;
+  /** Accessible label for zoomable images; omit to leave images inert. */
+  zoomLabel?: string;
 }
 
 export interface RenderResult {
@@ -34,8 +37,11 @@ export interface RenderResult {
  * `baseUrl` is the URL of the Markdown file, used to resolve relative links/images.
  */
 export function renderContent(markdown: string, ctx: RenderContext): RenderResult {
-  const doc = renderMarkdown(markdown, { highlightCode: true });
+  return renderDocument(renderMarkdown(markdown, { highlightCode: true }), ctx);
+}
 
+/** Sanitize and post-process an already rendered document (Markdown or API reference). */
+export function renderDocument(doc: RenderedDoc, ctx: RenderContext): RenderResult {
   let html = doc.html;
   for (const plugin of ctx.plugins) {
     if (plugin.transformHtml) html = plugin.transformHtml(html, ctx.page);
@@ -50,6 +56,7 @@ export function renderContent(markdown: string, ctx: RenderContext): RenderResul
   if (ctx.copyCode) addCopyButtons(fragment);
   addCodeTitles(fragment);
   enhanceComponents(fragment, ctx.labels);
+  if (ctx.zoomLabel) markZoomables(fragment, ctx.zoomLabel);
 
   for (const plugin of ctx.plugins) {
     if (plugin.onPageRendered) plugin.onPageRendered(fragment, ctx.page);

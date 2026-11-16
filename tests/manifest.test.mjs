@@ -118,3 +118,40 @@ test("invalid badge tones and revision dates fail validation", () => {
   assert.throws(()=>normalizeManifest({...base,sections:[{...base.sections[0],revision:{branchTone:"purple"}}]},url),/branchTone/);
   assert.throws(()=>normalizeManifest({...base,sections:[{...base.sections[0],pages:[{id:"p",title:"P",source:"p.md",badge:{label:"X",tone:"purple"}}]}]},url),/tone/);
 });
+
+test("api pages, external link entries and an integrated apiReference", () => {
+  const m = normalizeManifest({ ...base,
+    apiReference: { spec: "./specs/main.yaml", label: { en: "API", it: "API it" } },
+    sections: [{ id: "apps", title: "Apps", pages: [
+      { id: "orders-api", title: "Orders API", api: "https://api.example.com/openapi.json" },
+      { id: "swagger-ui", title: "Swagger UI", link: "https://api.example.com/docs" },
+      { id: "p", title: "P", source: "p.md" },
+    ] }] }, url);
+  const api = m.pages.get("orders-api");
+  assert.equal(api.api, true);
+  assert.deepEqual(api.candidates, ["https://api.example.com/openapi.json"]);
+  assert.equal(m.pages.has("swagger-ui"), false, "link entries are not routable");
+  assert.equal(m.sections[0].pages[1].link, "https://api.example.com/docs");
+  assert.equal(m.order.some((p) => p.id === "swagger-ui"), false);
+  assert.deepEqual(m.apiReference, { url: "https://docs.example.com/specs/main.yaml", pageId: "api-reference", label: "API" });
+  assert.equal(m.pages.get("api-reference").hidden, true);
+  assert.equal(m.features.lightbox, true);
+});
+
+test("api and link URLs follow the source safety policy", () => {
+  const page = (p) => ({ ...base, sections: [{ id: "s", title: "S", pages: [{ id: "x", title: "X", ...p }] }] });
+  assert.throws(() => normalizeManifest(page({ api: "javascript:alert(1)" }), url), /http/);
+  assert.throws(() => normalizeManifest(page({ link: "https://u:p@x.test/" }), url), /credentials/);
+  assert.throws(() => normalizeManifest(page({ api: "https://x.test/spec.json?token=1" }), url), /auth/);
+  assert.throws(() => normalizeManifest({ ...base, apiReference: { spec: "a.yaml", id: "p" } }, url), /duplicate/);
+  assert.equal(normalizeManifest({ ...base, apiReference: { url: "https://x.test/docs" } }, url).apiReference.pageId, undefined);
+});
+
+test("sections accept badges at any level, including the first", () => {
+  const m = normalizeManifest({ ...base, sections: [{ id: "top", title: "Top", badge: { label: "API", tone: "info" }, sections: [
+    { id: "sub", title: "Sub", badge: "beta", pages: [{ id: "p", title: "P", source: "p.md" }] },
+  ] }] }, url);
+  assert.deepEqual(m.sections[0].badge, { label: "API", tone: "info" });
+  assert.equal(m.sections[0].sections[0].badge, "beta");
+  assert.throws(() => normalizeManifest({ ...base, sections: [{ ...base.sections[0], badge: { label: "x", tone: "neon" } }] }, url), /tone/);
+});

@@ -52,7 +52,7 @@ export class Loader {
    * failure is surfaced when every candidate fails. The URL that answered is
    * returned too, so relative links and images resolve against the real file.
    */
-  async fetchFirst(candidates: string[]): Promise<{ text: string; url: string }> {
+  async fetchFirst(candidates: string[], maxBytes = this.opts.maxPageBytes): Promise<{ text: string; url: string }> {
     const urls = candidates.filter((u, i) => u && candidates.indexOf(u) === i);
     if (urls.length === 0) throw new LoaderError("page-fetch", "no source URL for page");
 
@@ -70,7 +70,7 @@ export class Loader {
         const cached = this.pageCache.get(url);
         if (cached !== undefined) return { text: cached, url };
         try {
-          const text = await this.fetchText(url, this.opts.maxPageBytes, "page-fetch", controller);
+          const text = await this.fetchText(url, maxBytes, "page-fetch", controller);
           this.pageCache.set(url, text);
           return { text, url };
         } catch (err) {

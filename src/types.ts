@@ -13,8 +13,10 @@ export interface ManifestFeatures {
   previousNext?: boolean;
   breadcrumbs?: boolean;
   editLink?: boolean;
-  /** Offer the current Markdown source as a download. Opt-in. */
+  /** Offer the current Markdown source (or API description) as a download. Opt-in. */
   sourceDownload?: boolean;
+  /** Open content images and diagrams in the in-page viewer. Default true. */
+  lightbox?: boolean;
   sidebar?: {
     collapsible?: boolean;
     /** Section ids expanded on first load. */
@@ -80,6 +82,13 @@ export interface ManifestPage {
   revision?: ManifestRevision;
   /** Hide from the sidebar but keep routable. */
   hidden?: boolean;
+  /**
+   * An OpenAPI 3.x / Swagger 2.0 description (JSON or YAML, local or remote)
+   * rendered as an integrated, read-only API reference instead of Markdown.
+   */
+  api?: LocalizableString;
+  /** An external (or host-app) URL: the sidebar entry links out instead of routing. */
+  link?: string;
 }
 
 /** A social or external link shown as an icon in the header. */
@@ -92,10 +101,24 @@ export interface ManifestLink {
   label?: string;
 }
 
-/** A pinned reference link (e.g. Swagger/OpenAPI) shown at the bottom of the sidebar. */
+/**
+ * A pinned API reference shown at the bottom of the sidebar. With `spec`, the
+ * OpenAPI/Swagger description is rendered inside the docs; with only `url`, it
+ * is an external link.
+ */
 export interface ManifestApiReference {
+  url?: string;
+  spec?: string;
+  /** Route id of the integrated reference page. Default "api-reference". */
+  id?: string;
+  label?: LocalizableString;
+}
+
+/** A validated API reference: an external `url`, or the id of the integrated page. */
+export interface ResolvedApiReference {
   url: string;
   label?: string;
+  pageId?: string;
 }
 
 /** A "return to the host application" link rendered at the start of the header. */
@@ -120,6 +143,8 @@ export interface ManifestSection {
   title: LocalizableString;
   /** Optional icon key (a small built-in glyph set). */
   icon?: string;
+  /** Optional badge shown next to the section title, at any nesting level. */
+  badge?: ManifestBadge;
   pages?: ManifestPage[];
   /** Optional, independently collapsible nested sections. */
   sections?: ManifestSection[];
@@ -216,7 +241,9 @@ export interface Manifest {
 }
 
 /** A page flattened into a lookup table with its resolved absolute source URL. */
-export interface ResolvedPage extends Omit<ManifestPage, "title" | "source" | "attachments"> {
+export interface ResolvedPage extends Omit<ManifestPage, "title" | "source" | "attachments" | "api"> {
+  /** True when the page renders an API description rather than Markdown. */
+  api?: boolean;
   /** Title resolved to the active locale. */
   title: string;
   /** Primary absolute URL (first candidate) for the active locale. */
@@ -255,7 +282,7 @@ export interface ResolvedManifest {
   /** Validated header links. */
   links: ManifestLink[];
   /** Validated API reference link, if any. */
-  apiReference?: ManifestApiReference;
+  apiReference?: ResolvedApiReference;
   /** Default appearance from the manifest, if declared. */
   appearance?: "light" | "dark" | "auto";
   /** When true (or a non-empty list), show a header palette selector. */
@@ -280,6 +307,7 @@ export interface DocsError {
     | "page-not-found"
     | "page-fetch"
     | "page-too-large"
+    | "api-invalid"
     | "network-timeout"
     | "offline"
     | "unknown";

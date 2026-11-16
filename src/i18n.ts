@@ -50,6 +50,38 @@ export interface UIStrings {
   versionUnreleased: string;
   /** Link from a version banner to the default version. */
   versionLatest: string;
+  /** Integrated API reference. */
+  apiSpec: string;
+  apiEndpoints: string;
+  apiParameters: string;
+  apiRequestBody: string;
+  apiResponses: string;
+  apiHeaders: string;
+  apiSchemas: string;
+  apiSchema: string;
+  apiExample: string;
+  apiProperties: string;
+  apiServers: string;
+  apiAuth: string;
+  apiRequired: string;
+  apiDeprecated: string;
+  apiEnum: string;
+  apiDefault: string;
+  apiOneOf: string;
+  apiAnyOf: string;
+  apiRecursive: string;
+  apiFilter: string;
+  apiExpandAll: string;
+  apiCollapseAll: string;
+  apiNoMatch: string;
+  /** Image viewer. */
+  viewerOpen: string;
+  viewerClose: string;
+  viewerPrevious: string;
+  viewerNext: string;
+  viewerZoomIn: string;
+  viewerZoomOut: string;
+  viewerOriginal: string;
 }
 
 const en: UIStrings = {
@@ -89,6 +121,36 @@ const en: UIStrings = {
   versionLegacy: "You are viewing the documentation for {version}, which is no longer actively maintained.",
   versionUnreleased: "You are viewing unreleased documentation for {version}.",
   versionLatest: "Go to the latest version",
+  apiSpec: "API specification",
+  apiEndpoints: "Endpoints",
+  apiParameters: "Parameters",
+  apiRequestBody: "Request body",
+  apiResponses: "Responses",
+  apiHeaders: "Headers",
+  apiSchemas: "Schemas",
+  apiSchema: "Schema",
+  apiExample: "Example",
+  apiProperties: "Properties",
+  apiServers: "Servers",
+  apiAuth: "Authentication",
+  apiRequired: "required",
+  apiDeprecated: "deprecated",
+  apiEnum: "Allowed",
+  apiDefault: "Default",
+  apiOneOf: "One of",
+  apiAnyOf: "Any of",
+  apiRecursive: "recursive",
+  apiFilter: "Filter endpoints",
+  apiExpandAll: "Expand all",
+  apiCollapseAll: "Collapse all",
+  apiNoMatch: "No endpoint matches this filter.",
+  viewerOpen: "Open image",
+  viewerClose: "Close",
+  viewerPrevious: "Previous image",
+  viewerNext: "Next image",
+  viewerZoomIn: "Zoom in",
+  viewerZoomOut: "Zoom out",
+  viewerOriginal: "Open original",
 };
 
 const DICTIONARIES: Record<string, Partial<UIStrings>> = {
@@ -130,6 +192,36 @@ const DICTIONARIES: Record<string, Partial<UIStrings>> = {
     versionLegacy: "Stai consultando la documentazione di {version}, non più mantenuta attivamente.",
     versionUnreleased: "Stai consultando la documentazione non ancora rilasciata di {version}.",
     versionLatest: "Vai alla versione più recente",
+    apiSpec: "Specifica API",
+    apiEndpoints: "Endpoint",
+    apiParameters: "Parametri",
+    apiRequestBody: "Corpo della richiesta",
+    apiResponses: "Risposte",
+    apiHeaders: "Header",
+    apiSchemas: "Schemi",
+    apiSchema: "Schema",
+    apiExample: "Esempio",
+    apiProperties: "Proprietà",
+    apiServers: "Server",
+    apiAuth: "Autenticazione",
+    apiRequired: "obbligatorio",
+    apiDeprecated: "deprecato",
+    apiEnum: "Valori ammessi",
+    apiDefault: "Predefinito",
+    apiOneOf: "Uno tra",
+    apiAnyOf: "Uno o più tra",
+    apiRecursive: "ricorsivo",
+    apiFilter: "Filtra endpoint",
+    apiExpandAll: "Espandi tutto",
+    apiCollapseAll: "Comprimi tutto",
+    apiNoMatch: "Nessun endpoint corrisponde al filtro.",
+    viewerOpen: "Apri immagine",
+    viewerClose: "Chiudi",
+    viewerPrevious: "Immagine precedente",
+    viewerNext: "Immagine successiva",
+    viewerZoomIn: "Ingrandisci",
+    viewerZoomOut: "Riduci",
+    viewerOriginal: "Apri originale",
   },
   es: {
     searchPlaceholder: "Buscar en la documentación",

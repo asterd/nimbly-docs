@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.0.9
+
+- Integrated, read-only API reference for OpenAPI 3.x and Swagger 2.0, in
+  JSON or YAML, from local or remote files: per page (`api`) at any navigation
+  depth, or behind the pinned sidebar link (`apiReference.spec`). Tag groups,
+  method badges, parameters, request bodies, responses, schema trees with
+  `$ref` links, generated examples, endpoint filter and expand/collapse.
+  Operation bodies render lazily, so large specs stay fast.
+- Built-in minimal YAML reader (block/flow collections, block scalars,
+  anchors and merge keys) — no runtime dependency.
+- External sidebar entries (`link`).
+- Section badges at any navigation level, including top-level sections.
+- Downloads: groups stack with an even card grid, lighter file cards with
+  size (and origin for external files) under the title, no heading for a
+  single group, and full-width toolbar buttons on mobile.
+- In-page image viewer: images, image links and diagrams open in a
+  full-screen, mobile-ready carousel with swipe, pinch, double-tap and wheel
+  zoom, pan and keyboard controls (`features.lightbox`, on by default).
+- Anchor-only navigation within the current page no longer re-renders it.
+- The bundled stylesheet is now minified.
+
 ## 0.0.8
 
 - Four nested navigation levels with independent collapse state, active

@@ -134,7 +134,7 @@
 | `backLink` |  | object | `{ url, label? }` "back to app" link; `label` is localizable. |
 | `footer` |  | string | Text above the fixed "Powered by" line. |
 | `links` |  | array | Header icon links (see below). |
-| `apiReference` |  | object | Pinned sidebar link `{ url, label? }`. |
+| `apiReference` |  | object | Pinned sidebar link: `{ spec, id?, label? }` renders the API inside the docs, `{ url, label? }` links out. |
 | `languages` |  | array | `{ code, label }[]`; first is default. |
 | `versions` |  | array | `{ id, label?, manifest?, status? }[]`; see [Versioned docs](./versions.md). |
 | `features` |  | object | Feature switches. |
@@ -150,6 +150,7 @@
 | `pages` |  | array | Page entries. |
 | `sections` |  | array | Up to four levels of independently collapsible subsections. |
 | `collapsed` |  | boolean | Start collapsed. |
+| `badge` |  | string or `{ label, tone? }` | Badge next to the section title, at any level (same format as page badges). |
 
 ### Pages
 
@@ -162,6 +163,8 @@
 | `description` |  | localizable | Search/summary text. |
 | `badge` |  | string | String or {label, tone}. Explicit tones are neutral, success, warning, danger and info. |
 | `hidden` |  | boolean | Routable but not listed. |
+| `api` |  | localizable | OpenAPI 3.x / Swagger 2.0 file (JSON or YAML) rendered as an integrated API reference instead of `source`. See [API reference and images](./api-reference.md). |
+| `link` |  | string | External URL: the entry opens in a new tab and is not routed. |
 
 ### Page badges
 

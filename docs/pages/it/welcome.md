@@ -4,8 +4,10 @@ Nimbly Docs è un Web Component che mostra documentazione Markdown a partire da 
 
 Stai leggendo la versione italiana di questa pagina. Per tornare all'inglese usa il selettore della lingua nell'header.
 
-:::tip Prova le novità della 0.0.8
-Apri [Prova le nuove funzionalità](../feature-tour.md): trovi allegati da scaricare, esportazione Markdown, revisioni e badge colorati. Nella sidebar la sezione «Novità 0.0.8» arriva fino alla [Tabella utenti](../demo-users.md), con quattro livelli di sottosezioni e allegati ereditati. Il selettore della palette è disponibile anche nel menu mobile.
+:::tip Novità della 0.0.9
+I riferimenti OpenAPI e Swagger ora si vedono direttamente nella documentazione e le immagini si aprono in un visualizzatore con zoom e swipe: vedi [Riferimento API e immagini](../api-reference.md) o il link **Riferimento API** in fondo alla sidebar. Le sezioni possono avere badge a ogni livello.
+
+Dalla 0.0.8: apri [Prova le nuove funzionalità](../feature-tour.md): trovi allegati da scaricare, esportazione Markdown, revisioni e badge colorati. Nella sidebar la sezione «Novità 0.0.8» arriva fino alla [Tabella utenti](../demo-users.md), con quattro livelli di sottosezioni e allegati ereditati. Il selettore della palette è disponibile anche nel menu mobile.
 :::
 
 ## Come funziona

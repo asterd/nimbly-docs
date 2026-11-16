@@ -173,6 +173,14 @@
         },
         "revision": {
           "$ref": "#/$defs/revision"
+        },
+        "api": {
+          "$ref": "#/$defs/localizable",
+          "description": "OpenAPI 3.x / Swagger 2.0 description (JSON or YAML) rendered as an integrated, read-only API reference instead of Markdown."
+        },
+        "link": {
+          "type": "string",
+          "description": "External URL: the sidebar entry opens it in a new tab instead of routing."
         }
       },
       "additionalProperties": true
@@ -213,6 +221,10 @@
         },
         "revision": {
           "$ref": "#/$defs/revision"
+        },
+        "badge": {
+          "$ref": "#/$defs/badge",
+          "description": "Badge next to the section title, at any nesting level."
         }
       },
       "additionalProperties": true
@@ -239,18 +251,38 @@
     },
     "apiReference": {
       "type": "object",
-      "required": [
-        "url"
-      ],
+      "description": "Pinned sidebar API reference. `spec` renders the description inside the docs; `url` links out.",
       "properties": {
+        "spec": {
+          "type": "string",
+          "description": "OpenAPI/Swagger description rendered inside the docs."
+        },
         "url": {
           "type": "string",
-          "format": "uri"
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "External reference URL (used when no spec is given)."
+        },
+        "id": {
+          "$ref": "#/$defs/id",
+          "description": "Route id of the integrated page. Default api-reference."
         },
         "label": {
-          "type": "string"
+          "$ref": "#/$defs/localizable"
         }
       },
+      "anyOf": [
+        {
+          "required": [
+            "spec"
+          ]
+        },
+        {
+          "required": [
+            "url"
+          ]
+        }
+      ],
       "additionalProperties": false
     },
     "backLink": {
@@ -323,6 +355,11 @@
         "sourceDownload": {
           "type": "boolean",
           "default": false
+        },
+        "lightbox": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open content images and diagrams in the in-page viewer."
         }
       },
       "additionalProperties": true

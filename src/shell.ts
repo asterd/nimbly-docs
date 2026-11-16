@@ -1,6 +1,7 @@
 import { apiIcon, arrowLeftIcon, bookIcon, chevronIcon, externalIcon, githubIcon, globeIcon, layersIcon, linkedinIcon, menuIcon, paletteIcon } from "./icons.js";
 import { DEFAULT_BRAND_TITLE, THEME_LABELS } from "./constants.js";
-import type { ManifestApiReference, ManifestLanguage, ManifestLink, ResolvedVersion } from "./types.js";
+import { buildHash } from "./router.js";
+import type { ResolvedApiReference, ManifestLanguage, ManifestLink, ResolvedVersion } from "./types.js";
 import type { UIStrings } from "./i18n.js";
 
 /** Brand identity resolved from attributes, then the manifest, then defaults. */
@@ -21,7 +22,7 @@ export interface ShellConfig {
   /** Active language code. */
   activeLanguage: string;
   /** Pinned API reference for the sidebar footer, if any. */
-  apiReference?: ManifestApiReference;
+  apiReference?: ResolvedApiReference;
   /** Resolved "back to app" link, if declared. */
   backLink?: { url: string; label: string };
   /** Localized UI strings. */
@@ -202,7 +203,7 @@ function renderLinks(container: HTMLElement, links: ManifestLink[]): void {
 /** Render the pinned API reference link at the bottom of the sidebar. */
 function renderApiReference(
   footer: HTMLElement,
-  apiReference: ManifestApiReference | undefined,
+  apiReference: ResolvedApiReference | undefined,
   fallbackLabel: string
 ): void {
   footer.replaceChildren();
@@ -212,9 +213,15 @@ function renderApiReference(
   }
   const a = document.createElement("a");
   a.className = "nd-api-link";
-  a.href = apiReference.url;
-  a.target = "_blank";
-  a.rel = "noopener noreferrer";
+  // An integrated reference is an internal route; otherwise it opens externally.
+  if (apiReference.pageId) {
+    a.href = buildHash(apiReference.pageId);
+    a.dataset.pageId = apiReference.pageId;
+  } else {
+    a.href = apiReference.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+  }
   const icon = document.createElement("span");
   icon.className = "nd-api-icon";
   icon.setAttribute("aria-hidden", "true");
@@ -224,7 +231,7 @@ function renderApiReference(
   const ext = document.createElement("span");
   ext.className = "nd-api-ext";
   ext.setAttribute("aria-hidden", "true");
-  ext.innerHTML = externalIcon();
+  ext.innerHTML = apiReference.pageId ? chevronIcon() : externalIcon();
   a.append(icon, label, ext);
   footer.appendChild(a);
   footer.hidden = false;

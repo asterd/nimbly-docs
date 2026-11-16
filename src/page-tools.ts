@@ -76,12 +76,15 @@ function toggle(label: string, glyph: string, panel: HTMLElement, count?: number
 export function renderPageTools(page: ResolvedPage, sourceUrl: string, labels: UIStrings, sourceDownload: boolean, markdown: string): HTMLElement | null {
   const revision = page.revision;
   const files = [...page.attachments];
-  const sourceText = sourceDownload ? markdownDownload(page, markdown) : "";
-  const currentSource: ResolvedAttachment | null = sourceDownload ? {
+  const sourceText = sourceDownload && !page.api ? markdownDownload(page, markdown) : "";
+  // API pages offer the description file itself; Markdown pages a provenance-stamped copy.
+  const currentSource: ResolvedAttachment | null = !sourceDownload ? null : page.api ? {
+    label: labels.apiSpec, url: sourceUrl, group: labels.downloadPage,
+  } : {
     label: labels.downloadSource, url: sourceUrl, group: labels.downloadPage,
     mediaType: "text/markdown", download: page.id.replace(/\//g, "-") + ".md",
     bytes: new TextEncoder().encode(sourceText).length,
-  } : null;
+  };
   if (currentSource) files.unshift(currentSource);
   if (!revision && files.length === 0) return null;
 
@@ -130,6 +133,8 @@ export function renderPageTools(page: ResolvedPage, sourceUrl: string, labels: U
       const section = element("section", undefined, "nd-download-group");
       const title = element("div", group, "nd-download-group-title");
       title.id = "nd-dl-group-" + (++groupSeq);
+      // A lone group needs no heading; it still names the list for assistive tech.
+      title.hidden = groups.size === 1;
       section.setAttribute("aria-labelledby", title.id);
       const list = element("ul", undefined, "nd-download-list");
       for (const file of entries) {
@@ -140,7 +145,7 @@ export function renderPageTools(page: ResolvedPage, sourceUrl: string, labels: U
         const external = new URL(file.url).origin !== window.location.origin;
         const saves = file.download !== false;
         if (saves) link.download = typeof file.download === "string" ? file.download : filename(file.url);
-        if (file === currentSource) link.addEventListener("click", (event) => {
+        if (file === currentSource && !page.api) link.addEventListener("click", (event) => {
           event.preventDefault();
           const url = URL.createObjectURL(new Blob([sourceText], { type: "text/markdown;charset=utf-8" }));
           const download = element("a");
@@ -152,8 +157,11 @@ export function renderPageTools(page: ResolvedPage, sourceUrl: string, labels: U
         const body = element("span", undefined, "nd-download-body");
         body.appendChild(element("span", file.label, "nd-download-label"));
         if (file.description) body.appendChild(element("span", file.description, "nd-download-description"));
-        const meta = element("span", file.bytes !== undefined ? size(file.bytes) : "", "nd-download-meta");
-        link.append(element("span", formatLabel(file), "nd-download-format"), body, meta,
+        // Size and, for files on another site, where they come from.
+        const facts = [file.bytes !== undefined ? size(file.bytes) : "", external ? new URL(file.url).hostname : ""].filter(Boolean);
+        if (facts.length) body.appendChild(element("span", facts.join(" · "), "nd-download-meta"));
+        link.title = file.label;
+        link.append(element("span", formatLabel(file), "nd-download-format"), body,
           icon(saves && !external ? downloadIcon() : externalIcon(), "nd-download-action"));
         item.appendChild(link); list.appendChild(item);
       }

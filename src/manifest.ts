@@ -9,9 +9,10 @@
  */
 import type {
   Manifest,
-  ManifestApiReference,
+  ResolvedApiReference,
   ManifestLanguage,
   ManifestLink,
+  ManifestPage,
   ManifestSection,
   ManifestTheme,
   ResolvedManifest,
@@ -296,12 +297,22 @@ function validatePage(
   seenIds.add(id);
   const title = resolveTitle(page.title, "page.title", loc.locale, loc.defaultLocale);
 
+  // An external link entry: shown in the sidebar, never routed, fetched or indexed.
+  if (page.link !== undefined) {
+    const link = resolveSource(requireString(page.link, "page.link"), manifestUrl);
+    return { id, title, url: link, link, candidates: [], sectionPath, attachments: [] };
+  }
+
+  // An API description replaces the Markdown source; it is fetched as-is (no pages/ convention).
+  const rawApi = page.api === undefined ? null : localizedValue(page.api, loc);
+  if (page.api !== undefined && !rawApi) throw new ManifestError(`page "${id}" has an invalid api description URL`);
+
   // `source` may be a single string or a per-locale map; `sources` (a map) is
   // also accepted and merged. Resolve the raw source string for the active locale.
-  const rawSource = pickLocalizedSource(page, loc);
+  const rawSource = rawApi ?? pickLocalizedSource(page, loc);
   if (!rawSource) throw new ManifestError(`page "${id}" is missing a usable source`);
 
-  const candidates = buildCandidates(rawSource, manifestUrl, loc.locale, loc.defaultLocale);
+  const candidates = rawApi ? [resolveSource(rawApi, manifestUrl)] : buildCandidates(rawSource, manifestUrl, loc.locale, loc.defaultLocale);
   if (candidates.length === 0) throw new ManifestError(`page "${id}" source "${rawSource}" is not resolvable`);
 
   const normalized = { id, title } as Omit<ResolvedPage, "url" | "candidates" | "sectionPath">;
@@ -310,6 +321,7 @@ function validatePage(
   const badge = validateBadge(page.badge, loc);
   if (badge !== undefined) normalized.badge = badge;
   if (page.hidden === true) normalized.hidden = true;
+  if (rawApi) normalized.api = true;
 
   const defaults = inheritDefaults(page, parent, manifestUrl, loc);
   const resolved: ResolvedPage = { ...normalized, url: candidates[0]!, candidates, sectionPath, attachments: defaults.attachments };
@@ -347,10 +359,13 @@ function validateSection(
   const normalized: ManifestSection = { id, title, pages: [], sections: [] };
   if (typeof section.icon === "string") normalized.icon = section.icon;
   if (section.collapsed === true) normalized.collapsed = true;
+  const badge = validateBadge(section.badge, loc);
+  if (badge !== undefined) normalized.badge = badge;
 
   if (section.pages !== undefined) {
     if (!Array.isArray(section.pages)) throw new ManifestError(`section "${id}" pages must be an array`);
-    normalized.pages = section.pages.map((p) => validatePage(p, manifestUrl, seenIds, path, out, loc, defaults));
+    // Sections carry resolved pages at runtime (the sidebar reads `link`/`badge` from them).
+    normalized.pages = section.pages.map((p) => validatePage(p, manifestUrl, seenIds, path, out, loc, defaults)) as unknown as ManifestPage[];
   }
   if (section.sections !== undefined) {
     if (section.sections instanceof Array && section.sections.length > 0 && depth >= LIMITS.maxSectionDepth) {
@@ -432,13 +447,40 @@ function validateLinks(input: unknown): ManifestLink[] {
   return out;
 }
 
-function validateApiReference(input: unknown): ManifestApiReference | undefined {
+/** Resolve a string or `{ locale: value }` map to the active locale. */
+function localizedValue(value: unknown, loc: LocaleCtx): string | null {
+  if (typeof value === "string") return value || null;
+  if (!isPlainObject(value)) return null;
+  return resolveOptionalLocalized(value, loc) ?? (Object.values(value).find((v) => typeof v === "string" && v) as string | undefined) ?? null;
+}
+
+/**
+ * Validate the pinned API reference. With `spec`, register a hidden, routable
+ * API page and point the sidebar link at it; otherwise keep an https link.
+ */
+function validateApiReference(
+  input: unknown,
+  manifestUrl: string,
+  loc: LocaleCtx,
+  seenIds: Set<string>,
+  out: { order: ResolvedPage[]; pages: Map<string, ResolvedPage> }
+): ResolvedApiReference | undefined {
   if (!isPlainObject(input)) return undefined;
+  const label = localizedValue(input.label, loc)?.trim() || undefined;
+  if (typeof input.spec === "string") {
+    const id = input.id === undefined ? "api-reference" : requireString(input.id, "apiReference.id");
+    if (!ID_PATTERN.test(id)) throw new ManifestError(`apiReference id "${id}" must match ${ID_PATTERN}`);
+    if (seenIds.has(id)) throw new ManifestError(`duplicate id "${id}"`);
+    seenIds.add(id);
+    const url = resolveSource(input.spec, manifestUrl);
+    const page: ResolvedPage = { id, title: label || "API", url, candidates: [url], sectionPath: [], attachments: [], api: true, hidden: true };
+    out.pages.set(id, page);
+    out.order.push(page);
+    return { url, pageId: id, ...(label ? { label } : {}) };
+  }
   const url = safeExternalUrl(input.url);
   if (!url) return undefined;
-  const ref: ManifestApiReference = { url };
-  if (typeof input.label === "string" && input.label.trim()) ref.label = input.label.trim();
-  return ref;
+  return label ? { url, label } : { url };
 }
 
 function validateLanguages(input: unknown): ManifestLanguage[] {
@@ -521,6 +563,7 @@ export function normalizeManifest(raw: unknown, manifestUrl: string, locale = ""
   const seenIds = new Set<string>();
   const defaults: PageDefaults = { catalog: attachmentCatalog(raw.attachments, manifestUrl, loc), attachments: [] };
   const sections = raw.sections.map((s) => validateSection(s, manifestUrl, seenIds, [], 0, out, loc, defaults));
+  const apiRef = validateApiReference(raw.apiReference, manifestUrl, loc, seenIds, out);
 
   if (out.pages.size === 0) throw new ManifestError("manifest must contain at least one page");
 
@@ -534,6 +577,7 @@ export function normalizeManifest(raw: unknown, manifestUrl: string, locale = ""
     breadcrumbs: f.breadcrumbs !== false,
     editLink: f.editLink === true,
     sourceDownload: f.sourceDownload === true,
+    lightbox: f.lightbox !== false,
     sidebar: {
       collapsible: sidebar.collapsible !== false,
       defaultExpanded: Array.isArray(sidebar.defaultExpanded)
@@ -566,7 +610,6 @@ export function normalizeManifest(raw: unknown, manifestUrl: string, locale = ""
     chooseThemes: false,
     themeChoices: [],
   };
-  const apiRef = validateApiReference(raw.apiReference);
   if (apiRef) resolved.apiReference = apiRef;
 
   if (raw.appearance === "light" || raw.appearance === "dark" || raw.appearance === "auto") {
