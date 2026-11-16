@@ -4,7 +4,7 @@
 //   dist/nimbly-docs.<version>.<hash>.min.js.map
 //   dist/nimbly-docs.<version>.<hash>.min.js.sha384
 // Also writes stable unhashed aliases (nimbly-docs.min.js) for local/dev use.
-import { build, context } from "esbuild";
+import { build, context, transform } from "esbuild";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, renameSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -36,6 +36,17 @@ const options = {
     "__NIMBLY_VERSION__": JSON.stringify(pkg.version),
   },
   loader: { ".css": "text" },
+  plugins: [{
+    // The stylesheet is inlined as a string: minify it like the JS it ships in.
+    name: "minify-css-text",
+    setup(b) {
+      b.onLoad({ filter: /\.css$/ }, async (args) => {
+        const source = readFileSync(args.path, "utf8");
+        const { code } = await transform(source, { loader: "css", minify: !dev, target: ["chrome105", "safari16", "firefox110"] });
+        return { contents: code, loader: "text" };
+      });
+    },
+  }],
   outfile: join(dist, "nimbly-docs.min.js"),
   metafile: true,
 };

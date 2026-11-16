@@ -49,6 +49,8 @@ export const LIMITS = {
   maxPages: 500,
   maxManifestBytes: 256 * 1024,
   maxPageBytes: 2 * 1024 * 1024,
+  /** Max OpenAPI/Swagger description size, in bytes. */
+  maxSpecBytes: 8 * 1024 * 1024,
   /** Number of Markdown pages kept in the in-memory LRU. */
   pageCacheSize: 10,
 };

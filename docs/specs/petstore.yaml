@@ -1,0 +1,176 @@
+openapi: 3.0.3
+info:
+  title: Petstore API
+  version: 1.2.0
+  description: |
+    A small sample API rendered **inside** Nimbly Docs from this YAML file.
+    Open an operation to see its parameters, request body, responses and a
+    generated example. Nothing here sends requests: it is documentation only.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: https://api.petstore.example/v1
+    description: Production
+  - url: https://sandbox.petstore.example/v1
+    description: Sandbox
+tags:
+  - name: pets
+    description: Create, list and update pets.
+  - name: orders
+    description: Adoption orders.
+security:
+  - bearerAuth: []
+paths:
+  /pets:
+    get:
+      tags: [pets]
+      operationId: listPets
+      summary: List pets
+      description: Returns pets page by page, newest first.
+      parameters:
+        - name: limit
+          in: query
+          description: How many items to return (max 100).
+          schema: { type: integer, format: int32, default: 20 }
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/PetStatus' }
+      responses:
+        '200':
+          description: A page of pets.
+          headers:
+            X-Next-Cursor:
+              description: Cursor for the next page.
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Pet' }
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [pets]
+      operationId: createPet
+      summary: Create a pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NewPet' }
+      responses:
+        '201':
+          description: Created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pet' }
+        '422':
+          $ref: '#/components/responses/Error'
+  /pets/{petId}:
+    parameters:
+      - name: petId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [pets]
+      operationId: getPet
+      summary: Get a pet
+      responses:
+        '200':
+          description: The pet.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pet' }
+        '404':
+          description: No pet with this id.
+    delete:
+      tags: [pets]
+      operationId: deletePet
+      summary: Delete a pet
+      deprecated: true
+      description: Use `PATCH /pets/{petId}` with `status: archived` instead.
+      responses:
+        '204':
+          description: Deleted.
+  /orders:
+    post:
+      tags: [orders]
+      operationId: createOrder
+      summary: Start an adoption
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [petId]
+              properties:
+                petId: { type: string, format: uuid }
+                note: { type: string, maxLength: 500 }
+            example:
+              petId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+              note: Weekend pickup, please.
+      responses:
+        '202':
+          description: Accepted; the order is being reviewed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Send `Authorization: Bearer <token>`.
+  responses:
+    Error:
+      description: Something went wrong.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    PetStatus:
+      type: string
+      enum: [available, pending, adopted, archived]
+    NewPet:
+      type: object
+      required: [name, species]
+      properties:
+        name: { type: string, example: Rex }
+        species: { type: string, enum: [dog, cat, rabbit] }
+        birthDate: { type: string, format: date }
+        tags:
+          type: array
+          items: { type: string }
+    Pet:
+      allOf:
+        - $ref: '#/components/schemas/NewPet'
+        - type: object
+          required: [id, status]
+          properties:
+            id: { type: string, format: uuid, readOnly: true }
+            status: { $ref: '#/components/schemas/PetStatus' }
+            owner: { $ref: '#/components/schemas/Owner' }
+    Owner:
+      type: object
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        pets:
+          type: array
+          description: Other pets of this owner.
+          items: { $ref: '#/components/schemas/Pet' }
+    Order:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        state: { type: string, enum: [review, approved, rejected] }
+        createdAt: { type: string, format: date-time }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, example: invalid_request }
+        message: { type: string }

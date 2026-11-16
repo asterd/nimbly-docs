@@ -1,8 +1,8 @@
 import { SIDEBAR_STATE_PREFIX } from "./constants.js";
-import { chevronIcon } from "./icons.js";
+import { chevronIcon, externalIcon } from "./icons.js";
 import { badgeClass, badgeLabel } from "./badges.js";
 import { buildHash } from "./router.js";
-import type { ManifestBadge, ManifestSection, ResolvedManifest } from "./types.js";
+import type { ManifestBadge, ManifestSection, ResolvedManifest, ResolvedPage } from "./types.js";
 
 export class Sidebar {
   private expanded = new Set<string>();
@@ -49,6 +49,7 @@ export class Sidebar {
     btn.setAttribute("aria-controls", `nd-section-${cssSafe(section.id)}`);
     btn.dataset.sectionId = section.id;
     btn.innerHTML = `${chevronIcon()}<span>${escapeHtml(str(section.title))}</span>`;
+    if (section.badge) btn.appendChild(badgeElement(section.badge));
     // Toggle only this section in-place. Rebuilding the whole tree on every
     // click was fragile and dropped focus/handlers; here we just flip state.
     btn.addEventListener("click", (event) => {
@@ -67,7 +68,7 @@ export class Sidebar {
     list.id = `nd-section-${cssSafe(section.id)}`;
     list.hidden = !expanded;
     for (const page of section.pages || []) {
-      if (!page.hidden) list.appendChild(this.renderPage(page.id, str(page.title), page.badge, activePageId));
+      if (!page.hidden) list.appendChild(this.renderPage(page.id, str(page.title), page.badge, activePageId, (page as unknown as ResolvedPage).link));
     }
     for (const sub of section.sections || []) {
       if (!this.hasVisiblePages(sub)) continue;
@@ -80,24 +81,27 @@ export class Sidebar {
     return group;
   }
 
-  private renderPage(id: string, title: string, badge: ManifestBadge | undefined, active: string): HTMLLIElement {
+  private renderPage(id: string, title: string, badge: ManifestBadge | undefined, active: string, link?: string): HTMLLIElement {
     const li = document.createElement("li");
     const a = document.createElement("a");
     a.className = "nd-page-link";
-    a.href = buildHash(id);
+    a.href = link ?? buildHash(id);
     const label = document.createElement("span");
     label.className = "nd-page-title";
     label.textContent = title;
     a.appendChild(label);
+    if (link) {
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      const ext = document.createElement("span");
+      ext.className = "nd-page-ext";
+      ext.setAttribute("aria-hidden", "true");
+      ext.innerHTML = externalIcon();
+      a.appendChild(ext);
+    }
     if (id === active) a.setAttribute("aria-current", "page");
     a.addEventListener("click", () => this.onNavigate());
-    if (badge) {
-      const b = document.createElement("span");
-      b.className = `nd-badge nd-tone-${badgeClass(badge)}`;
-      b.textContent = badgeLabel(badge);
-      b.title = badgeLabel(badge);
-      a.appendChild(b);
-    }
+    if (badge) a.appendChild(badgeElement(badge));
     li.appendChild(a);
     return li;
   }
@@ -134,6 +138,13 @@ export class Sidebar {
 /** Resolved manifests carry plain-string titles; coerce for the type checker. */
 function str(value: string | Record<string, string>): string {
   return typeof value === "string" ? value : Object.values(value)[0] ?? "";
+}
+function badgeElement(badge: ManifestBadge): HTMLElement {
+  const b = document.createElement("span");
+  b.className = `nd-badge nd-tone-${badgeClass(badge)}`;
+  b.textContent = badgeLabel(badge);
+  b.title = badgeLabel(badge);
+  return b;
 }
 function cssSafe(id: string): string { return id.replace(/[^a-z0-9_-]/gi, "-"); }
 function escapeHtml(v: string): string { return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }

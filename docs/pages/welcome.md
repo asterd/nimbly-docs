@@ -4,8 +4,10 @@ Nimbly Docs is a Web Component that renders Markdown documentation from a JSON m
 
 This site runs on Nimbly Docs and uses the default theme, Nimbly Classic. You can try the other themes from the palette button in the header, and open the docs of the previous release from the version selector next to the logo.
 
-:::tip Try the 0.0.8 features
-Open [Try the new features](./feature-tour.md) for working downloads, document revisions and semantic badges. Explore the new sidebar section down to [Users table](./demo-users.md) to try four nested subsection levels, inherited attachments and automatic ancestor expansion. The palette selector also works in the mobile navigation drawer.
+:::tip New in 0.0.9
+OpenAPI and Swagger references now render inside the docs, and images open in a zoomable, swipeable viewer: see [API reference and images](./api-reference.md) or the **API reference** link at the bottom of the sidebar. Sections can carry badges at any level.
+
+From 0.0.8, open [Try the new features](./feature-tour.md) for working downloads, document revisions and semantic badges. Explore the new sidebar section down to [Users table](./demo-users.md) to try four nested subsection levels, inherited attachments and automatic ancestor expansion. The palette selector also works in the mobile navigation drawer.
 :::
 
 ## How it works

@@ -5,7 +5,9 @@ import { autoIcon, moonIcon, sunIcon } from "./icons.js";
 import { hasMermaid, renderMermaid } from "./mermaid.js";
 import { Loader, LoaderError } from "./loader.js";
 import { ManifestError, normalizeManifest } from "./manifest.js";
-import { handleCopyClick, renderContent } from "./render.js";
+import { handleCopyClick, renderContent, renderDocument, type RenderContext, type RenderResult } from "./render.js";
+import { ApiSpecError, enhanceApi, parseApiSpec, renderApi } from "./openapi.js";
+import { Lightbox } from "./lightbox.js";
 import { handleTabClick, handleTabKeydown } from "./components.js";
 import { buildHash, Router, setRouteVersion, type Route } from "./router.js";
 import { SearchController } from "./search.js";
@@ -65,6 +67,9 @@ export class NimblyDocsElement extends HTMLElement {
   /** Set when a version switch keeps the current page id, which may not exist there. */
   private versionFallback = false;
   private currentPageId: string | null = null;
+  /** Page whose content is currently mounted; anchor-only route changes just scroll. */
+  private renderedPageId: string | null = null;
+  private lightbox: Lightbox | null = null;
   private keydownBound = false;
 
   connectedCallback(): void {
@@ -78,6 +83,7 @@ export class NimblyDocsElement extends HTMLElement {
     this.tocView?.disconnect();
     this.themes?.destroy();
     this.searchView?.destroy();
+    this.lightbox?.destroy();
   }
 
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
@@ -254,6 +260,8 @@ export class NimblyDocsElement extends HTMLElement {
     this.router.stop();
     this.tocView?.disconnect();
     this.searchView?.destroy();
+    this.lightbox?.destroy();
+    this.renderedPageId = null;
     this.root.replaceChildren();
     const style = document.createElement("style");
     style.textContent = styles;
@@ -288,7 +296,9 @@ export class NimblyDocsElement extends HTMLElement {
     shell.scrim.addEventListener("click", () => this.closeDrawer());
     shell.appearanceButton.addEventListener("click", () => this.themes?.cycleAppearance());
     shell.searchButton.addEventListener("click", () => this.openSearch());
+    this.lightbox = this.manifest.features.lightbox ? new Lightbox(shell.app, this.strings) : null;
     shell.app.addEventListener("click", (event) => {
+      if (this.lightbox?.handleClick(event, shell.content)) return;
       if (!handleTabClick(event.target, shell.content)) void handleCopyClick(event.target);
     });
     // The shadow root outlives shell re-mounts (locale/version switches): bind once.
@@ -332,6 +342,7 @@ export class NimblyDocsElement extends HTMLElement {
 
   private onGlobalKeydown(event: KeyboardEvent): void {
     if (this.shell && handleTabKeydown(event, this.shell.content)) return;
+    if (this.shell && this.lightbox?.handleKey(event, this.shell.content)) return;
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && this.searchView) {
       event.preventDefault();
       this.openSearch();
@@ -368,6 +379,15 @@ export class NimblyDocsElement extends HTMLElement {
       src: opts.mermaidSrc,
       dark: this.themes?.get().scheme === "dark",
     });
+    // Diagrams open in the viewer too, where they can be zoomed and panned.
+    if (this.lightbox) {
+      for (const figure of Array.from(content.querySelectorAll<HTMLElement>(".nd-mermaid:not(.nd-zoomable)"))) {
+        figure.classList.add("nd-zoomable");
+        figure.tabIndex = 0;
+        figure.setAttribute("role", "button");
+        figure.setAttribute("aria-label", this.strings.viewerOpen);
+      }
+    }
   }
 
   private refreshBrand(): void {
@@ -449,18 +469,28 @@ export class NimblyDocsElement extends HTMLElement {
     }
     this.versionFallback = false;
     if (!page) { this.showError({ code: "page-not-found", message: "The requested page does not exist." }); return; }
+    if (page.id === this.renderedPageId) {
+      // Same page, new anchor (TOC, in-page links, schema links): keep the DOM and its state.
+      this.closeDrawer();
+      this.scrollToAnchor(route.anchor);
+      return;
+    }
     this.currentPageId = page.id;
     const sequence = ++this.navigating;
     this.renderPageLoading();
     try {
-      const { text: markdown, url: sourceUrl } = await loader.fetchFirst(page.candidates);
+      const { text: markdown, url: sourceUrl } = await loader.fetchFirst(page.candidates, page.api ? LIMITS.maxSpecBytes : undefined);
       if (sequence !== this.navigating) return;
       const s = this.strings;
-      const result = renderContent(markdown, {
+      const ctx: RenderContext = {
         manifest, page, baseUrl: sourceUrl, debug: this.options().debug, copyCode: manifest.features.copyCode, plugins: NimblyDocsElement.plugins,
         labels: { note: s.note, tip: s.tip, important: s.important, warning: s.warning, danger: s.danger },
-      });
+        ...(manifest.features.lightbox ? { zoomLabel: s.viewerOpen } : {}),
+      };
+      const result = page.api ? this.renderApiPage(markdown, ctx) : renderContent(markdown, ctx);
       shell.content.replaceChildren(result.fragment);
+      this.renderedPageId = page.id;
+      shell.sidebar.querySelector(".nd-api-link")?.toggleAttribute("aria-current", page.id === manifest.apiReference?.pageId);
       const tools = renderPageTools(page, sourceUrl, s, manifest.features.sourceDownload, markdown);
       if (tools) {
         const title = shell.content.querySelector("h1");
@@ -482,11 +512,26 @@ export class NimblyDocsElement extends HTMLElement {
     } catch (err) {
       if (sequence !== this.navigating) return;
       if (err instanceof LoaderError && err.code === "network-timeout" && loader) return;
+      if (err instanceof ApiSpecError) {
+        this.showError({ code: "api-invalid", message: `Unable to read this API description: ${err.message}.`, cause: err });
+        this.debug(err);
+        return;
+      }
       const e = err as LoaderError;
       const code = e instanceof LoaderError ? e.code : "page-fetch";
       this.showError({ code, message: "Unable to load this documentation page.", cause: err });
       this.debug(err);
     }
+  }
+
+  /** Render an OpenAPI/Swagger description through the regular content pipeline. */
+  private renderApiPage(text: string, ctx: RenderContext): RenderResult {
+    const api = renderApi(parseApiSpec(text), this.strings);
+    const result = renderDocument(api.doc, ctx);
+    // Operation bodies render lazily, without page plugins, through the same sanitizer.
+    const bodyCtx = { ...ctx, plugins: [] };
+    enhanceApi(result.fragment, api, (html) => renderDocument({ html, toc: [], text: "" }, bodyCtx).fragment, this.strings);
+    return result;
   }
 
   private renderMeta(page: ResolvedPage): void {
@@ -518,10 +563,10 @@ export class NimblyDocsElement extends HTMLElement {
     const main = document.createElement("main"); main.className = "nd-main"; main.setAttribute("aria-busy", "true"); main.innerHTML = `<div class="nd-content"><div class="nd-skeleton nd-skeleton-title"></div><div class="nd-skeleton nd-skeleton-line"></div><div class="nd-skeleton nd-skeleton-line"></div><div class="nd-skeleton nd-skeleton-line short"></div></div>`;
     this.root.append(style, main);
   }
-  private renderPageLoading(): void { if (this.shell) { this.shell.content.setAttribute("aria-busy", "true"); this.shell.content.innerHTML = `<div class="nd-skeleton nd-skeleton-title"></div><div class="nd-skeleton nd-skeleton-line"></div><div class="nd-skeleton nd-skeleton-line short"></div>`; } }
+  private renderPageLoading(): void { this.renderedPageId = null; if (this.shell) { this.shell.content.setAttribute("aria-busy", "true"); this.shell.content.innerHTML = `<div class="nd-skeleton nd-skeleton-title"></div><div class="nd-skeleton nd-skeleton-line"></div><div class="nd-skeleton nd-skeleton-line short"></div>`; } }
 
   private showError(error: DocsError): void {
-    this.loader?.abortPending(); this.tocView?.disconnect();
+    this.loader?.abortPending(); this.tocView?.disconnect(); this.renderedPageId = null;
     const target = this.shell?.content;
     if (target) {
       target.removeAttribute("aria-busy"); target.replaceChildren(this.errorView(error)); this.shell!.toc.hidden = true; announce(this.shell!.live, error.message);
@@ -539,7 +584,13 @@ export class NimblyDocsElement extends HTMLElement {
 
   private scrollToAnchor(anchor: string | null): void {
     if (!anchor || !this.shell) { window.scrollTo({ top: 0, behavior: "auto" }); return; }
-    requestAnimationFrame(() => this.root.querySelector<HTMLElement>(`#${CSS.escape(anchor)}`)?.scrollIntoView({ block: "start" }));
+    requestAnimationFrame(() => {
+      const target = this.root.querySelector<HTMLElement>(`#${CSS.escape(anchor)}`);
+      if (!target) return;
+      // Reveal anchors inside collapsed sections (API operations, schemas, details).
+      for (let d = target.closest("details"); d; d = d.parentElement?.closest("details") ?? null) d.open = true;
+      target.scrollIntoView({ block: "start" });
+    });
   }
   private toggleDrawer(): void { if (!this.shell) return; const open = this.shell.app.dataset.drawerOpen !== "true"; this.shell.app.dataset.drawerOpen = String(open); this.shell.scrim.hidden = !open; this.shell.menuButton.setAttribute("aria-expanded", String(open)); this.shell.menuButton.setAttribute("aria-label", open ? this.strings.closeNav : this.strings.openNav); }
   private closeDrawer(): void { if (!this.shell) return; this.shell.app.dataset.drawerOpen = "false"; this.shell.scrim.hidden = true; this.shell.menuButton.setAttribute("aria-expanded", "false"); this.shell.menuButton.setAttribute("aria-label", this.strings.openNav); }

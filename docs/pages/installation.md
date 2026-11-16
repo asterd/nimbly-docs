@@ -22,7 +22,7 @@ Put the bundle, an `index.json` and your Markdown files on the same static host:
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script type="module" src="/assets/nimbly-docs.0.0.8.<hash>.min.js"></script>
+    <script type="module" src="/assets/nimbly-docs.0.0.9.<hash>.min.js"></script>
   </head>
   <body>
     <nimbly-docs manifest="./index.json"></nimbly-docs>
@@ -38,7 +38,7 @@ If you don't want to host the bundle, load a versioned copy from GitHub Pages:
 
 ```html
 <script type="module"
-  src="https://asterd.github.io/nimbly-docs/cdn/nimbly-docs.0.0.8.min.js"
+  src="https://asterd.github.io/nimbly-docs/cdn/nimbly-docs.0.0.9.min.js"
   crossorigin="anonymous"></script>
 ```
 
@@ -60,7 +60,7 @@ If the bundle is served from another origin, pin the exact file and use the hash
 
 ```html
 <script type="module"
-  src="https://assets.example.com/nimbly-docs.0.0.8.<hash>.min.js"
+  src="https://assets.example.com/nimbly-docs.0.0.9.<hash>.min.js"
   integrity="sha384-…"
   crossorigin="anonymous"></script>
 ```
