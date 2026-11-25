@@ -9,7 +9,7 @@ Both diagrams below are generated from JSON files in this repository and embedde
 [What happens when a page opens](../diagrams/nimbly-page-load.html "archify ratio=1085:603")
 
 :::note Why a plugin and not a feature?
-A diagram file contains a script, and Nimbly never runs code that comes from content. Instead of loosening the sanitizer, the plugin does one narrow thing: it frames a file you published yourself, in an isolated sandbox. It is a separate ~2 KB file. The core bundle does not change and does not import it.
+A diagram file contains a script, and Nimbly never runs code that comes from content. Instead of loosening the sanitizer, the plugin does one narrow thing: it frames a file you published yourself, in an isolated sandbox. It is a separate ~2.5 KB file. The core bundle does not change and does not import it.
 :::
 
 ## How it fits together
@@ -57,7 +57,7 @@ Pin the files with Subresource Integrity when they come from a CDN: every releas
 
 ```html
 <script type="module"
-  src="https://asterd.github.io/nimbly-docs/cdn/archify-embed.0.0.10.min.js"
+  src="https://asterd.github.io/nimbly-docs/cdn/archify-embed.0.0.11.min.js"
   integrity="sha384-…"
   crossorigin="anonymous"></script>
 ```
@@ -86,7 +86,7 @@ Each frame has a small bar above it, and two views.
 
 | View | What you get |
 | --- | --- |
-| **In the page** | A clean, read-only diagram. Click a node to highlight everything it connects to, click again to clear. Nodes that link to another diagram open it inside the same frame, with a **Back** control. |
+| **In the page** | A clean, read-only diagram. Click a node to highlight everything it connects to, click again to clear. Nodes that link to another diagram open it inside the same frame, and a **Back to start** button appears in the bar. |
 | **Expand** | The frame covers the whole window and loads Archify's complete viewer: search (`/`), route tracing (`R`), the semantic lens (`L`), the style switcher, and export to PNG, SVG and WebM. `Esc` or **Close** returns to the page view. |
 | **Open full page** | The same full viewer in a new tab, with the current light or dark scheme. |
 
@@ -221,7 +221,7 @@ An architecture node can open another diagram. Targets must be files in the **sa
   ] }
 ```
 
-A node with one target gets a link mark; with several targets its panel lists them. The linked diagram shows a **Back** control when you arrive from another one. Embed and theme settings travel with the click, so the experience stays inside the frame.
+A node with one target gets a link mark; with several targets its panel lists them. The linked diagram opens in the same frame, keeping the embed and theme settings, and the frame bar offers **Back to start**. In the expanded view and on the full page, Archify's own **Back** control is available as well (set `meta.parentHref` on the target diagram).
 
 ### 7. Language
 
@@ -327,6 +327,6 @@ Treat the JSON as source code. In CI, rebuild only what changed and fail if the 
 | Host attribute | `archify-base`: folder of approved diagrams, relative to the page |
 | Link title | `archify [ratio=W:H] [height=px]` |
 | Frame parameters | `embed=1`, `theme=light\|dark` (set by the plugin) |
-| Plugin file | `archify-embed.<version>.<hash>.min.js`, about 2 KB gzip, separate from the core |
+| Plugin file | `archify-embed.<version>.<hash>.min.js`, about 2.5 KB gzip, separate from the core |
 | Registration | Automatic on load. Manual: `NimblyDocsElement.use(archifyEmbed)` |
 | Browsers | Current Chromium, Firefox and Safari |

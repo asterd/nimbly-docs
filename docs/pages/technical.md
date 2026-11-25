@@ -12,7 +12,7 @@ Nimbly Docs is a single ESM bundle with no runtime dependencies. The figures bel
 | Gzip budget | 120 KB |
 | Headroom | ~69 KB |
 
-The gzip size covers the Markdown parser, the sanitizer, search, the UI, icons, all themes, the syntax highlighter, the YAML reader and the API reference. The diagram engines are not included: Pele is loaded separately, and only on pages that contain a diagram when diagrams are enabled, and the [Archify plugin](./archify.md) is a separate ~2 KB file that the core never imports.
+The gzip size covers the Markdown parser, the sanitizer, search, the UI, icons, all themes, the syntax highlighter, the YAML reader and the API reference. The diagram engines are not included: Pele is loaded separately, and only on pages that contain a diagram when diagrams are enabled, and the [Archify plugin](./archify.md) is a separate ~2.5 KB file that the core never imports.
 
 `npm run build` and `npm run size` print the exact size of each build, and CI fails if the core goes over budget.
 

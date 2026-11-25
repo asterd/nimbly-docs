@@ -90,8 +90,8 @@ export function standaloneUrl(url: URL, scheme: "light" | "dark"): string {
 }
 
 const STRINGS = {
-  en: { expand: "Expand", collapse: "Close", open: "Open full page", frame: "Interactive diagram" },
-  it: { expand: "Espandi", collapse: "Chiudi", open: "Apri a pagina intera", frame: "Diagramma interattivo" },
+  en: { expand: "Expand", collapse: "Close", open: "Open full page", frame: "Interactive diagram", start: "Back to start" },
+  it: { expand: "Espandi", collapse: "Chiudi", open: "Apri a pagina intera", frame: "Diagramma interattivo", start: "Torna all'inizio" },
 };
 
 function strings(host: Element | null): typeof STRINGS.en {
@@ -114,7 +114,7 @@ function style(el: HTMLElement, props: Record<string, string>): void {
   for (const [k, v] of Object.entries(props)) el.style.setProperty(k, v);
 }
 
-interface Live { frame: HTMLIFrameElement; url: URL; expanded: boolean }
+interface Live { frame: HTMLIFrameElement; url: URL; expanded: boolean; set(address: string): void }
 const live = new Set<Live>();
 let watching: Element | null = null;
 
@@ -127,7 +127,7 @@ function watchScheme(host: HTMLElement): void {
     for (const item of Array.from(live)) {
       if (!item.frame.isConnected) { live.delete(item); continue; }
       const next = item.expanded ? standaloneUrl(item.url, scheme) : frameUrl(item.url, scheme);
-      if (item.frame.src !== next) item.frame.src = next;
+      if (item.frame.src !== next) item.set(next);
     }
   }).observe(host, { attributes: true, attributeFilter: ["data-scheme"] });
 }
@@ -179,19 +179,26 @@ function build(anchor: HTMLAnchorElement, url: URL, spec: ArchifyEmbedSpec, host
   expand.textContent = t.expand;
   expand.setAttribute("aria-expanded", "false");
 
+  // A link inside a diagram navigates the frame (same-origin file, opaque origin: its address is not
+  // readable). Every `load` we did not cause is such a navigation; offer a way back to the first diagram.
+  const start = document.createElement("button");
+  start.type = "button";
+  start.textContent = t.start;
+  start.hidden = true;
+
   const open = document.createElement("a");
   open.href = standaloneUrl(url, scheme);
   open.target = "_blank";
   open.rel = "noopener noreferrer";
   open.textContent = t.open;
 
-  for (const el of [expand, open]) {
+  for (const el of [start, expand, open]) {
     style(el, {
       font: "inherit", color: "var(--dv-color-brand-strong)", background: "transparent", border: "0",
       padding: ".15rem .35rem", cursor: "pointer", "text-decoration": "underline", "white-space": "nowrap",
     });
   }
-  bar.append(name, expand, open);
+  bar.append(name, start, expand, open);
 
   const frame = document.createElement("iframe");
   frame.title = label;
@@ -200,6 +207,12 @@ function build(anchor: HTMLAnchorElement, url: URL, spec: ArchifyEmbedSpec, host
   frame.setAttribute("sandbox", SANDBOX);
   frame.setAttribute("allow", "fullscreen");
   frame.setAttribute("allowfullscreen", "");
+  let own = 1; // loads caused by this code (the first one is the initial address)
+  const item: Live = {
+    frame, url, expanded: false,
+    set(address) { own++; start.hidden = true; frame.src = address; },
+  };
+  frame.addEventListener("load", () => { if (own > 0) own--; else start.hidden = false; });
   frame.src = frameUrl(url, scheme);
   style(frame, { display: "block", border: "0", background: "var(--dv-color-bg)" });
 
@@ -208,7 +221,6 @@ function build(anchor: HTMLAnchorElement, url: URL, spec: ArchifyEmbedSpec, host
   // Expanded view: the figure covers the viewport and loads Archify's FULL viewer
   // (toolbar, route probe, lens, search, export). Closing restores the clean
   // in-column view. Esc or the button closes it.
-  const item: Live = { frame, url, expanded: false };
   let overflowBefore = "";
   const onKey = (e: KeyboardEvent): void => { if (e.key === "Escape") setExpanded(false); };
   function setExpanded(on: boolean): void {
@@ -218,7 +230,7 @@ function build(anchor: HTMLAnchorElement, url: URL, spec: ArchifyEmbedSpec, host
     layout(figure, frame, spec, on);
     item.expanded = on;
     const scheme = currentScheme(host);
-    frame.src = on ? standaloneUrl(url, scheme) : frameUrl(url, scheme);
+    item.set(on ? standaloneUrl(url, scheme) : frameUrl(url, scheme));
     const root = document.documentElement;
     if (on) {
       overflowBefore = root.style.overflow;
@@ -231,6 +243,7 @@ function build(anchor: HTMLAnchorElement, url: URL, spec: ArchifyEmbedSpec, host
     expand.focus();
   }
   expand.addEventListener("click", () => setExpanded(expand.getAttribute("aria-expanded") !== "true"));
+  start.addEventListener("click", () => item.set(item.expanded ? standaloneUrl(url, currentScheme(host)) : frameUrl(url, currentScheme(host))));
 
   figure.append(bar, frame);
   live.add(item);
