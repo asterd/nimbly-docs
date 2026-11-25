@@ -34,6 +34,10 @@ jobs:
           cp dist/nimbly-docs.*.min.js release/
           cp dist/nimbly-docs.*.min.js.map release/
           cp dist/nimbly-docs.*.min.js.sha384 release/
+          # Optional plugins (separate files, not part of the size-budgeted core).
+          cp dist/plugins/archify-embed.*.*.min.js release/
+          cp dist/plugins/archify-embed.*.*.min.js.map release/
+          cp dist/plugins/archify-embed.*.*.min.js.sha384 release/
           bundle=$(basename $(ls dist/nimbly-docs.*.min.js | head -1))
           echo "bundle=$bundle" >> "$GITHUB_OUTPUT"
           echo "sri=$(cat dist/*.sha384)" >> "$GITHUB_OUTPUT"
@@ -50,6 +54,12 @@ jobs:
           # Stable, unhashed aliases for convenience.
           cp dist/nimbly-docs.min.js "$tmp/nimbly-docs.${version}.min.js"
           cp dist/nimbly-docs.min.js "$tmp/nimbly-docs.latest.min.js"
+          # Optional Archify embed plugin, same naming scheme.
+          cp dist/plugins/archify-embed.*.*.min.js "$tmp/"
+          cp dist/plugins/archify-embed.*.*.min.js.map "$tmp/" || true
+          cp dist/plugins/archify-embed.*.*.min.js.sha384 "$tmp/" || true
+          cp dist/plugins/archify-embed.min.js "$tmp/archify-embed.${version}.min.js"
+          cp dist/plugins/archify-embed.min.js "$tmp/archify-embed.latest.min.js"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin cdn && git checkout cdn || git checkout --orphan cdn
@@ -89,5 +99,9 @@ jobs:
               crossorigin="anonymous"></script>
             ```
 
+            ### Optional: Archify diagram embeds
+            `archify-embed.<version>.<hash>.min.js` is a separate ~2 KB plugin that frames
+            [Archify](https://github.com/tt-a1i/archify) diagrams in a sandboxed viewer.
+            It is not part of the core bundle. See the "Archify diagrams" page of the docs.
             You can also download the attached bundle and host it yourself with
             `Cache-Control: public, max-age=31536000, immutable`.

@@ -77,6 +77,34 @@ async function finalize(result) {
   return { base, sri };
 }
 
+// Optional plugins are separate files and never part of the core bundle:
+//   dist/plugins/<name>.<version>.<hash>.min.js (+ .map, .sha384) and a stable
+//   unhashed alias dist/plugins/<name>.min.js, mirroring the core release files.
+// They are not counted by `npm run size`, which only budgets the core.
+const pluginEntries = ["archify-embed"];
+
+async function buildPlugins() {
+  mkdirSync(join(dist, "plugins"), { recursive: true });
+  for (const name of pluginEntries) {
+    const outfile = join(dist, "plugins", `${name}.min.js`);
+    await build({
+      entryPoints: [join(root, "src", "plugins", `${name}.ts`)],
+      bundle: true, format: "esm", target: ["es2021"], platform: "browser",
+      minify: !dev, sourcemap: true, legalComments: "none", charset: "utf8", outfile,
+    });
+    const code = readFileSync(outfile);
+    const hash = createHash("sha256").update(code).digest("hex").slice(0, 10);
+    const hashed = `${name}.${pkg.version}.${hash}.min.js`;
+    writeFileSync(join(dist, "plugins", hashed), code);
+    if (existsSync(outfile + ".map")) writeFileSync(join(dist, "plugins", hashed + ".map"), readFileSync(outfile + ".map"));
+    const sri = "sha384-" + createHash("sha384").update(code).digest("base64");
+    writeFileSync(join(dist, "plugins", hashed + ".sha384"), sri + "\n");
+    writeFileSync(outfile + ".sha384", sri + "\n");
+    console.log(`✔ built plugins/${hashed} (${(code.length / 1024).toFixed(1)} KB raw)`);
+    console.log(`  SRI: ${sri}`);
+  }
+}
+
 if (watch) {
   const ctx = await context(options);
   await ctx.watch();
@@ -84,4 +112,5 @@ if (watch) {
 } else {
   const result = await build(options);
   await finalize(result);
+  await buildPlugins();
 }

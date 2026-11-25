@@ -40,6 +40,7 @@ The primary design boundary is intentional: **manifests describe documentation; 
 - **Accessibility**: semantic landmarks, skip link, visible focus, live page announcements, keyboard search/drawer controls and reduced-motion support.
 - **Themes**: the default **Nimbly Classic** (`nimbly`), designed for readability on any device; `nimbus`, `midnight`, `paper`, `sabbia`; and `material`, `stellar` and `evergreen`, inspired by Material for MkDocs, Starlight and the Docusaurus classic theme. Every theme has light and dark variants. Token-only custom themes can also restyle the header, sidebar and type ("skin" tokens).
 - **Optional diagrams**: opt-in Mermaid rendering (`mermaid="on"`), lazy-loaded only when a page contains a diagram, in strict security mode.
+- **Optional Archify diagrams** (plugin, 0.0.10): interactive architecture maps, sequences and database schemas generated from your code, framed in a sandbox that follows the page theme. A separate ~2 KB file; the core is unchanged.
 - **Header links**: manifest-declared GitHub / LinkedIn / external links rendered as icons, left of the appearance toggle.
 - **Integrated API reference**: OpenAPI 3.x and Swagger 2.0 descriptions (JSON or YAML, local or remote) rendered read-only inside the docs, as any sidebar page (`api`) or as the pinned sidebar link (`apiReference.spec`). Operations are grouped by tag, bodies render lazily on open, with schema trees, generated examples and an endpoint filter. External entries (`link`) are supported too.
 - **Image viewer**: content images, image links and diagrams open in a full-screen, mobile-ready carousel with swipe, pinch/double-tap/wheel zoom and pan, instead of a new page.
@@ -558,6 +559,22 @@ No. Manifest validation is compiled into the bundle and runs at load time, with 
 ## Diagrams
 
 Mermaid rendering is opt-in and lazy. Enable it with `mermaid="on"`; the library is imported (from a pinned URL you can override with `mermaid-src`) only on pages that contain a ` ```mermaid ` block, in Mermaid's `strict` security mode. This keeps the base bundle dependency-free and within budget. See the demo’s *Diagrams (Mermaid)* page for flowchart, sequence, class and state examples.
+
+## Archify diagrams (0.0.10)
+
+[Archify](https://github.com/tt-a1i/archify) writes validated, interactive diagrams as standalone HTML files. The optional `archify-embed` plugin shows them inside a page:
+
+```html
+<script type="module" src="./assets/nimbly-docs.min.js"></script>
+<script type="module" src="./assets/archify-embed.min.js"></script>
+<nimbly-docs manifest="./index.json" archify-base="./diagrams/"></nimbly-docs>
+```
+
+```md
+[Runtime architecture](../diagrams/app.html "archify ratio=1080:640")
+```
+
+Without the plugin the line is an ordinary link. The frame is sandboxed without `allow-same-origin`, only same-origin `.html` files under `archify-base` are accepted, and the light/dark scheme follows the page. The plugin is a separate release file (`archify-embed.<version>.<hash>.min.js`, ~2 KB gzip) and is not part of the size-budgeted core. `nimbly-docs-init --archify` scaffolds a project that is already wired. The docs page *Archify diagrams* covers installation, generating maps from a repository, evidence, themes, CSP and CI.
 
 ## Technical details
 

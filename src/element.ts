@@ -31,6 +31,22 @@ const APPEARANCE_LABEL: Record<Appearance, string> = {
   auto: "System appearance — activate for light",
 };
 
+let sheet: CSSStyleSheet | null | undefined;
+/**
+ * Install the stylesheet. A constructable stylesheet is allowed under a strict
+ * `style-src 'self'` policy, unlike an inline <style> element, which is only the
+ * fallback for engines without adoptedStyleSheets (then it returns the element).
+ */
+function styleNode(root: ShadowRoot): HTMLStyleElement | null {
+  if (sheet === undefined) {
+    try { sheet = new CSSStyleSheet(); sheet.replaceSync(styles); } catch { sheet = null; }
+  }
+  if (sheet && "adoptedStyleSheets" in root) { root.adoptedStyleSheets = [sheet]; return null; }
+  const el = document.createElement("style");
+  el.textContent = styles;
+  return el;
+}
+
 /** The secure, embeddable Nimbly Docs custom element. */
 export class NimblyDocsElement extends HTMLElement {
   static readonly version = VERSION;
@@ -263,9 +279,7 @@ export class NimblyDocsElement extends HTMLElement {
     this.lightbox?.destroy();
     this.renderedPageId = null;
     this.root.replaceChildren();
-    const style = document.createElement("style");
-    style.textContent = styles;
-
+    const style = styleNode(this.root);
     const shell = createShell({
       brand: this.brandConfig(),
       search: this.manifest.features.search && opts.search,
@@ -277,7 +291,8 @@ export class NimblyDocsElement extends HTMLElement {
       backLink: this.manifest.backLink,
       strings: this.strings,
     });
-    this.root.append(style, shell.app);
+    if (style) this.root.append(style);
+    this.root.append(shell.app);
     this.shell = shell;
 
     this.themes = new ThemeManager(this, this.manifest, (state) => this.onThemeChange(state));
@@ -559,9 +574,10 @@ export class NimblyDocsElement extends HTMLElement {
 
   private renderLoading(): void {
     this.root.replaceChildren();
-    const style = document.createElement("style"); style.textContent = styles;
+    const style = styleNode(this.root);
     const main = document.createElement("main"); main.className = "nd-main"; main.setAttribute("aria-busy", "true"); main.innerHTML = `<div class="nd-content"><div class="nd-skeleton nd-skeleton-title"></div><div class="nd-skeleton nd-skeleton-line"></div><div class="nd-skeleton nd-skeleton-line"></div><div class="nd-skeleton nd-skeleton-line short"></div></div>`;
-    this.root.append(style, main);
+    if (style) this.root.append(style);
+    this.root.append(main);
   }
   private renderPageLoading(): void { this.renderedPageId = null; if (this.shell) { this.shell.content.setAttribute("aria-busy", "true"); this.shell.content.innerHTML = `<div class="nd-skeleton nd-skeleton-title"></div><div class="nd-skeleton nd-skeleton-line"></div><div class="nd-skeleton nd-skeleton-line short"></div>`; } }
 
@@ -571,7 +587,7 @@ export class NimblyDocsElement extends HTMLElement {
     if (target) {
       target.removeAttribute("aria-busy"); target.replaceChildren(this.errorView(error)); this.shell!.toc.hidden = true; announce(this.shell!.live, error.message);
     } else {
-      this.root.replaceChildren(); const style = document.createElement("style"); style.textContent = styles; const main = document.createElement("main"); main.className = "nd-main"; main.appendChild(this.errorView(error)); this.root.append(style, main);
+      this.root.replaceChildren(); const style = styleNode(this.root); const main = document.createElement("main"); main.className = "nd-main"; main.appendChild(this.errorView(error)); if (style) this.root.append(style); this.root.append(main);
     }
     this.dispatchEvent(new CustomEvent("docs-error", { detail: error, bubbles: true, composed: true }));
   }

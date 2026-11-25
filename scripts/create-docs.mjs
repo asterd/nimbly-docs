@@ -3,7 +3,7 @@
  * Scaffold a new Nimbly Docs documentation project.
  *
  * Usage:
- *   node scripts/create-docs.mjs [targetDir] [--title "My Docs"] [--lang en,it] [--force]
+ *   node scripts/create-docs.mjs [targetDir] [--title "My Docs"] [--lang en,it] [--archify] [--force]
  *   npx nimbly-docs-init my-docs --title "Acme" --lang en,it
  *
  * Creates:
@@ -13,6 +13,9 @@
  *   <target>/pages/<lang>/*.md  starter pages for each extra language
  *   <target>/assets/            place your logo/images here
  *
+ * With --archify the host also loads the optional Archify embed plugin and
+ * opts in (`archify-base="./diagrams/"`); a diagrams/ folder is created.
+ *
  * It never overwrites existing files unless --force is given.
  */
 import { mkdirSync, writeFileSync, existsSync, readFileSync, copyFileSync } from "node:fs";
@@ -20,10 +23,12 @@ import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 function parseArgs(argv) {
-  const args = { _: [], title: "My Documentation", lang: "en", force: false, bundle: "./assets/nimbly-docs.min.js" };
+  const args = { _: [], title: "My Documentation", lang: "en", force: false, archify: false, bundle: "./assets/nimbly-docs.min.js", plugin: "./assets/archify-embed.min.js" };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--force") args.force = true;
+    else if (a === "--archify") args.archify = true;
+    else if (a === "--archify-plugin") args.plugin = argv[++i] ?? args.plugin;
     else if (a === "--title") args.title = argv[++i] ?? args.title;
     else if (a === "--lang") args.lang = argv[++i] ?? args.lang;
     else if (a === "--bundle") args.bundle = argv[++i] ?? args.bundle;
@@ -143,15 +148,20 @@ const html = `<!doctype html>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="${title}">
     <title>${title}</title>
-    <script type="module" src="${args.bundle}"></script>
+    <script type="module" src="${args.bundle}"></script>${args.archify ? `
+    <script type="module" src="${args.plugin}"></script>` : ""}
   </head>
   <body>
-    <nimbly-docs manifest="./index.json" theme="nimbus" search="on" toc="auto"></nimbly-docs>
+    <nimbly-docs manifest="./index.json" theme="nimbus" search="on" toc="auto"${args.archify ? ` archify-base="./diagrams/"` : ""}></nimbly-docs>
   </body>
 </html>
 `;
 write(join(target, "index.html"), html, args.force);
 
+if (args.archify) {
+  mkdirSync(join(target, "diagrams"), { recursive: true });
+  write(join(target, "diagrams", "README.md"), "Put the standalone HTML files produced by Archify here.\nPages embed them with:\n\n    [Architecture](../diagrams/app.html \"archify ratio=1080:640\")\n", args.force);
+}
 // Starter pages per language.
 const page = (heading, body) => `# ${heading}\n\n${body}\n`;
 const starters = {
@@ -179,3 +189,7 @@ console.log(`\nDone. Next steps:`);
 console.log(`  1. Put the built viewer bundle at: ${join(target, args.bundle.replace(/^\.\//, ""))}`);
 console.log(`  2. Serve the folder and open index.html (e.g. any static server).`);
 console.log(`  3. Edit index.json and the Markdown files under pages/.`);
+if (args.archify) {
+  console.log(`  4. Copy the plugin to: ${join(target, args.plugin.replace(/^\.\//, ""))}`);
+  console.log(`     and put Archify HTML files in ${join(target, "diagrams")}/ (see the "Archify diagrams" docs page).`);
+}

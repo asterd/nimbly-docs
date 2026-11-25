@@ -20,6 +20,15 @@ The parser escapes raw HTML. The sanitizer then checks the output again and remo
 - Source URLs can't contain credentials or token-like query parameters.
 - Each page is built in a `DocumentFragment` and swapped in at once.
 
+## Archify frames (optional plugin)
+
+The sanitizer still removes `iframe` from content, and the manifest still cannot load code. The optional [`archify-embed` plugin](./archify.md) is the one deliberate exception, and it is application-owned: the host page loads it and sets `archify-base`.
+
+- Only same-origin `.html` files inside `archify-base` are framed. Other origins, credentials and path escapes are rejected.
+- The frame is `sandbox="allow-scripts allow-downloads allow-popups"` without `allow-same-origin`, so the diagram cannot read the page, its cookies or its storage.
+- The frame address is rebuilt from the validated path plus `embed` and `theme`; query strings from Markdown are discarded.
+- Serve the diagrams folder with its own `Content-Security-Policy` and `frame-ancestors 'self'`. The host policy only needs `frame-src 'self'`.
+
 ## Deployment posture
 
 Serve the docs from the same origin as your app when you can. Any static host works: an Nginx location, an Apache vhost, an OpenShift route, a CDN bucket or GitHub Pages.
