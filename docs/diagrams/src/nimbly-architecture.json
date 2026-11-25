@@ -58,6 +58,6 @@
   "cards": [
     { "dot": "cyan", "title": "One file", "items": ["The core is a single ES module with no runtime dependencies.", "Diagram engines are opt-in and load only on pages that need them."] },
     { "dot": "rose", "title": "Content is untrusted", "items": ["Markdown and the manifest never run code in the page.", "Sanitizer output is the only thing that reaches the DOM."] },
-    { "dot": "amber", "title": "Plugins stay local", "items": ["A plugin is registered by the host page, never by the manifest.", "archify-embed is a separate 2 KB file, not part of the bundle."] }
+    { "dot": "amber", "title": "Plugins stay local", "items": ["A plugin is registered by the host page, never by the manifest.", "archify-embed is a separate 2.5 KB file, not part of the bundle."] }
   ]
 }

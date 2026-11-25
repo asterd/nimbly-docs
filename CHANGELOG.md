@@ -1,6 +1,11 @@
 # Changelog
+## 0.0.11
+- `archify-embed`: after a link inside a diagram opens another one in the same
+  frame, the bar shows **Back to start**. Archify hides its own back control in
+  the embedded view, so the plugin provides the way back.
+- Docs: corrected the Back behaviour in the Archify guide.
 ## 0.0.10
-- Optional **Archify diagram plugin** (`archify-embed`, separate ~2 KB gzip file;
+- Optional **Archify diagram plugin** (`archify-embed`, separate ~2.5 KB gzip file;
   the core bundle is byte-for-byte unchanged). A Markdown link titled
   `archify` becomes a sandboxed, theme-aware frame for an
   [Archify](https://github.com/tt-a1i/archify) diagram. Opt-in with

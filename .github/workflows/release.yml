@@ -100,7 +100,7 @@ jobs:
             ```
 
             ### Optional: Archify diagram embeds
-            `archify-embed.<version>.<hash>.min.js` is a separate ~2 KB plugin that frames
+            `archify-embed.<version>.<hash>.min.js` is a separate ~2.5 KB plugin that frames
             [Archify](https://github.com/tt-a1i/archify) diagrams in a sandboxed viewer.
             It is not part of the core bundle. See the "Archify diagrams" page of the docs.
             You can also download the attached bundle and host it yourself with
