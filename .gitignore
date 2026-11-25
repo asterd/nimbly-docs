@@ -8,3 +8,4 @@ coverage/
 docs/assets/nimbly-docs.min.js
 docs/cdn/
 .vscode
+docs/assets/archify-embed.min.js

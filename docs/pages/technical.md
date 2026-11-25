@@ -6,15 +6,15 @@ Nimbly Docs is a single ESM bundle with no runtime dependencies. The figures bel
 
 | Metric | Value |
 | --- | --- |
-| Raw (minified) | ~120 KB |
-| **Gzip** | **~33 KB** |
-| Brotli | ~29 KB |
+| Raw (minified) | ~177 KB |
+| **Gzip** | **~51 KB** |
+| Brotli | ~45 KB |
 | Gzip budget | 120 KB |
-| Headroom | ~87 KB |
+| Headroom | ~69 KB |
 
-The gzip size covers the Markdown parser, the sanitizer, search, the UI, icons, all themes and the syntax highlighter. The diagram engine is not included: it is loaded separately, and only on pages that contain a diagram when diagrams are enabled.
+The gzip size covers the Markdown parser, the sanitizer, search, the UI, icons, all themes, the syntax highlighter, the YAML reader and the API reference. The diagram engines are not included: Pele is loaded separately, and only on pages that contain a diagram when diagrams are enabled, and the [Archify plugin](./archify.md) is a separate ~2 KB file that the core never imports.
 
-`npm run build` and `npm run size` print the exact size of each build, and CI fails if it goes over budget.
+`npm run build` and `npm run size` print the exact size of each build, and CI fails if the core goes over budget.
 
 ## What is inside the bundle
 
@@ -30,6 +30,10 @@ The gzip size covers the Markdown parser, the sanitizer, search, the UI, icons, 
 | `shell` / `sidebar` / `toc` / `search` | UI and navigation |
 | `theme` | Palette + light/dark/auto appearance |
 | `a11y` | Focus and live-region helpers |
+| `openapi` / `yaml` | Read-only API reference and its YAML reader |
+| `lightbox` / `components` | Image viewer, callouts, tabs and other directives |
+
+Optional files, built separately and not counted in the budget: `plugins/archify-embed` (frames Archify diagrams in a sandbox).
 
 ## Release artifacts
 

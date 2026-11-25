@@ -41,6 +41,7 @@ No. Validation is built into the bundle and runs when the manifest loads. It als
 | `sidebar` | `auto` | `auto` / `open` / `closed` |
 | `mermaid` | off | Enables [diagrams](./diagrams.md) when present |
 | `mermaid-src` | Pinned CDN URL | Diagram engine URL, for self-hosting under a strict CSP |
+| `archify-base` | off | Folder of approved [Archify diagrams](./archify.md), relative to the page. Needs the optional `archify-embed` plugin; without it nothing happens |
 | `debug` | `false` | Logs diagnostics to the console |
 
 The [Manifest reference](./manifest.md) covers sections, pages, links, languages and path resolution. To generate a starter project, see [Start a new project](./scaffold.md).

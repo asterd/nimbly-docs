@@ -52,9 +52,15 @@
   ],
   "versions": [
     {
-      "id": "0.0.9",
-      "label": "v0.0.9 (latest)",
+      "id": "0.0.10",
+      "label": "v0.0.10 (latest)",
       "status": "current"
+    },
+    {
+      "id": "0.0.9",
+      "label": "v0.0.9",
+      "manifest": "./versions/0.0.9/index.json",
+      "status": "legacy"
     },
     {
       "id": "0.0.8",
@@ -367,6 +373,12 @@
               "title": "Diagrams",
               "source": "diagrams.md",
               "badge": "opt-in"
+            },
+            {
+              "id": "archify",
+              "title": "Archify diagrams",
+              "source": "archify.md",
+              "badge": "plugin"
             }
           ]
         }

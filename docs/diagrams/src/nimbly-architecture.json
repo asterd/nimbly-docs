@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Nimbly Docs · How the viewer is built",
+    "output": "nimbly-architecture.html",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/asterd/nimbly-docs",
+      "provider": "github",
+      "revision": "80339965663e5adce321f3b23d8e3075791aecb8"
+    }
+  },
+  "layout": { "mode": "auto" },
+  "components": [
+    { "id": "reader", "type": "external", "label": "Reader", "sublabel": "any modern browser" },
+    { "id": "element", "type": "frontend", "label": "<nimbly-docs>", "sublabel": "Web Component, Shadow DOM",
+      "sources": [{ "path": "src/element.ts", "line": 35, "label": "NimblyDocsElement" }] },
+    { "id": "router", "type": "backend", "label": "Router", "sublabel": "hash routes, deep links",
+      "sources": [{ "path": "src/router.ts", "line": 61, "label": "Router" }] },
+    { "id": "manifest", "type": "backend", "label": "Manifest", "sublabel": "validated index.json",
+      "sources": [{ "path": "src/manifest.ts", "line": 543, "label": "normalizeManifest" }] },
+    { "id": "loader", "type": "backend", "label": "Loader", "sublabel": "timeout, retry, LRU cache",
+      "sources": [{ "path": "src/loader.ts", "line": 26, "label": "Loader" }] },
+    { "id": "markdown", "type": "backend", "label": "Markdown parser", "sublabel": "raw HTML disabled",
+      "sources": [{ "path": "src/markdown.ts", "line": 72, "label": "renderMarkdown" }] },
+    { "id": "sanitize", "type": "security", "label": "Sanitizer", "sublabel": "allow-list of tags and URLs",
+      "sources": [{ "path": "src/sanitize.ts", "line": 66, "label": "sanitizeToFragment" }] },
+    { "id": "render", "type": "backend", "label": "Render", "sublabel": "links, code, components",
+      "sources": [{ "path": "src/render.ts", "line": 44, "label": "renderDocument" }] },
+    { "id": "ui", "type": "frontend", "label": "Shell, sidebar, search", "sublabel": "UI, TOC, themes",
+      "sources": [{ "path": "src/shell.ts", "line": 73, "label": "createShell" }] },
+    { "id": "plugins", "type": "backend", "label": "Plugin hook", "sublabel": "local plugins only",
+      "sources": [{ "path": "src/element.ts", "line": 43, "label": "NimblyDocsElement.use" }] },
+
+    { "id": "host", "type": "cloud", "label": "Static host", "sublabel": "index.json + Markdown" },
+    { "id": "pele", "type": "external", "label": "Pele", "sublabel": "Mermaid renderer (opt-in)" },
+    { "id": "archify", "type": "external", "label": "Archify diagram", "sublabel": "sandboxed HTML (opt-in)" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Core bundle: one ES module, no dependencies", "wraps": ["element", "router", "manifest", "loader", "markdown", "sanitize", "render", "ui", "plugins"] }
+  ],
+  "connections": [
+    { "id": "reader-element", "from": "reader", "to": "element", "label": "opens a page", "variant": "emphasis" },
+    { "id": "element-router", "from": "element", "to": "router", "label": "route" },
+    { "id": "element-manifest", "from": "element", "to": "manifest", "label": "validate" },
+    { "id": "element-loader", "from": "element", "to": "loader", "label": "fetch" },
+    { "id": "loader-host", "from": "loader", "to": "host", "label": "GET", "variant": "emphasis" },
+    { "id": "element-markdown", "from": "element", "to": "markdown", "label": "text" },
+    { "id": "markdown-sanitize", "from": "markdown", "to": "sanitize", "label": "HTML", "variant": "security" },
+    { "id": "sanitize-render", "from": "sanitize", "to": "render", "label": "safe fragment", "variant": "security" },
+    { "id": "render-ui", "from": "render", "to": "ui", "label": "mount" },
+    { "id": "render-plugins", "from": "render", "to": "plugins", "label": "onPageRendered" },
+    { "id": "plugins-archify", "from": "plugins", "to": "archify", "label": "sandboxed iframe", "variant": "dashed" },
+    { "id": "element-pele", "from": "element", "to": "pele", "label": "lazy import", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "One file", "items": ["The core is a single ES module with no runtime dependencies.", "Diagram engines are opt-in and load only on pages that need them."] },
+    { "dot": "rose", "title": "Content is untrusted", "items": ["Markdown and the manifest never run code in the page.", "Sanitizer output is the only thing that reaches the DOM."] },
+    { "dot": "amber", "title": "Plugins stay local", "items": ["A plugin is registered by the host page, never by the manifest.", "archify-embed is a separate 2 KB file, not part of the bundle."] }
+  ]
+}

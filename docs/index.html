@@ -7,7 +7,9 @@
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
     <title>Nimbly Docs — Demo</title>
     <!-- `npm run pages` copies the current built bundle here. -->
-    <script type="module" src="./assets/nimbly-docs.min.js?v=30ac3d35c5f9"></script>
+    <script type="module" src="./assets/nimbly-docs.min.js?v=1bf4710d9833"></script>
+    <!-- Optional plugin: frames Archify diagrams. `npm run pages` copies it here. -->
+    <script type="module" src="./assets/archify-embed.min.js"></script>
   </head>
   <body>
     <nimbly-docs
@@ -18,6 +20,7 @@
       toc="auto"
       sidebar="auto"
       mermaid="on"
+      archify-base="./diagrams/"
     ></nimbly-docs>
   </body>
 </html>

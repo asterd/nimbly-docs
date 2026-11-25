@@ -2,6 +2,10 @@
 
 Write diagrams in [Mermaid syntax](https://mermaid.js.org/syntax/flowchart.html) inside a ` ```mermaid ` code block. Nimbly Docs renders them to SVG with [Pele](https://github.com/obsidianmd/pele), a small renderer for the Mermaid language. Mermaid.js itself is not loaded.
 
+:::tip Need architecture maps, not just flowcharts?
+Mermaid is ideal for small diagrams written by hand. For interactive, validated maps generated from your code (architecture, sequences, database schemas, with source evidence) use the optional [Archify plugin](./archify.md).
+:::
+
 ## Enable diagrams
 
 Diagrams are off by default, so the base bundle stays small and has no dependencies. Turn them on with the `mermaid` attribute:

@@ -38,6 +38,18 @@ if (existsSync(source + ".map")) {
 const sri = "sha384-" + createHash("sha384").update(bundle).digest("base64");
 writeFileSync(join(cdnDir, versioned + ".sha384"), sri + "\n");
 
+// Optional plugins: versioned + latest aliases next to the core bundle, plus the
+// copy the demo host loads (docs/assets/archify-embed.min.js).
+const pluginSrc = join(root, "dist", "plugins", "archify-embed.min.js");
+if (existsSync(pluginSrc)) {
+  const plugin = readFileSync(pluginSrc);
+  const pluginVersioned = `archify-embed.${pkg.version}.min.js`;
+  cpSync(pluginSrc, join(destinationDir, "archify-embed.min.js"));
+  cpSync(pluginSrc, join(cdnDir, pluginVersioned));
+  cpSync(pluginSrc, join(cdnDir, "archify-embed.latest.min.js"));
+  writeFileSync(join(cdnDir, pluginVersioned + ".sha384"), "sha384-" + createHash("sha384").update(plugin).digest("base64") + "\n");
+  console.log(`✔ published docs/cdn/${pluginVersioned}`);
+}
 // Publish the scaffolder so it can be run zero-install via `curl … | node -`.
 const scaffolder = join(root, "scripts", "create-docs.mjs");
 if (existsSync(scaffolder)) cpSync(scaffolder, join(cdnDir, "create-docs.mjs"));

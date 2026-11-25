@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Nimbly Docs · What happens when a page opens",
+    "output": "nimbly-page-load.html",
+    "locale": "en",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    { "id": "reader", "type": "external", "label": "Reader", "sublabel": "browser" },
+    { "id": "element", "type": "frontend", "label": "<nimbly-docs>", "sublabel": "Web Component" },
+    { "id": "loader", "type": "backend", "label": "Loader", "sublabel": "fetch + cache" },
+    { "id": "host", "type": "cloud", "label": "Static host", "sublabel": "Markdown files" },
+    { "id": "render", "type": "security", "label": "Parser + sanitizer", "sublabel": "safe fragment" },
+    { "id": "plugin", "type": "backend", "label": "archify-embed", "sublabel": "optional plugin" },
+    { "id": "frame", "type": "external", "label": "Archify frame", "sublabel": "sandboxed" }
+  ],
+  "segments": [
+    { "from": 150, "to": 290, "label": "Fetch" },
+    { "from": 300, "to": 380, "label": "Render" },
+    { "from": 390, "to": 480, "label": "Mount" }
+  ],
+  "messages": [
+    { "id": "open", "from": "reader", "to": "element", "y": 170, "label": "open #/page", "variant": "emphasis" },
+    { "id": "fetch", "from": "element", "to": "loader", "y": 198, "label": "fetch page.md" },
+    { "id": "get", "from": "loader", "to": "host", "y": 226, "label": "GET page.md", "variant": "emphasis" },
+    { "id": "md", "from": "host", "to": "loader", "y": 254, "label": "200 Markdown" },
+    { "id": "text", "from": "loader", "to": "element", "y": 282, "label": "text (cached)" },
+    { "id": "parse", "from": "element", "to": "render", "y": 320, "label": "parse, sanitize", "variant": "security" },
+    { "id": "fragment", "from": "render", "to": "element", "y": 348, "label": "safe fragment", "variant": "security" },
+    { "id": "hook", "from": "element", "to": "plugin", "y": 410, "label": "onPageRendered" },
+    { "id": "iframe", "from": "plugin", "to": "frame", "y": 438, "label": "sandboxed iframe", "variant": "dashed" },
+    { "id": "shown", "from": "frame", "to": "reader", "y": 466, "label": "interactive diagram", "variant": "emphasis" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Atomic", "items": ["The page is built in a fragment and swapped in at once."] },
+    { "dot": "amber", "title": "Optional", "items": ["Without the plugin the Archify link stays an ordinary link."] }
+  ]
+}

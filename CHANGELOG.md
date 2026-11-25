@@ -1,4 +1,25 @@
 # Changelog
+## 0.0.10
+- Optional **Archify diagram plugin** (`archify-embed`, separate ~2 KB gzip file;
+  the core bundle is byte-for-byte unchanged). A Markdown link titled
+  `archify` becomes a sandboxed, theme-aware frame for an
+  [Archify](https://github.com/tt-a1i/archify) diagram. Opt-in with
+  `archify-base`; same-origin `.html` files under that folder only; no
+  `allow-same-origin`; without the plugin the link keeps working.
+  - `ratio=W:H` keeps the proportions at any column width, `height=px` fixes it.
+  - **Expand** covers the window and loads Archify's full viewer (search, route
+    tracing, export); `Esc` returns to the clean in-page view.
+  - Light/dark follows the page and is re-applied on change.
+- Core: the stylesheet is installed as a constructable stylesheet, so the strict
+  `style-src 'self'` policy recommended in the docs now works. An inline
+  `<style>` is only the fallback for engines without `adoptedStyleSheets`.
+  Size is unchanged (gzip ~51 KB).
+- `nimbly-docs-init --archify` scaffolds a project wired for diagrams.
+- Release and Pages publish `archify-embed.<version>.<hash>.min.js` (+ map and
+  SHA-384) next to the core bundle.
+- Docs: new *Archify diagrams* guide (install, generation, evidence, themes,
+  CSP, CI), security notes, and corrected bundle-size figures. v0.0.9 docs are
+  frozen as legacy.
 
 ## 0.0.9
 
